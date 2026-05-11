@@ -32,7 +32,7 @@
 
 ## Visão geral
 
-O **Mango** é um leitor de mangás desktop desenvolvido como trabalho da disciplina de **Implementação de Software** (PUCRS — 2026/1). O sistema consome o catálogo público do [MangaDex](https://api.mangadex.org) e oferece uma experiência de leitura confortável com biblioteca pessoal persistente.
+O **Mango** é um leitor de mangás desktop desenvolvido como trabalho da disciplina de **Implementação de Software** na **Universidade do Vale do Rio dos Sinos (Unisinos)** — 2026/1. O sistema consome o catálogo público do [MangaDex](https://api.mangadex.org) e oferece uma experiência de leitura confortável com biblioteca pessoal persistente.
 
 O grande diferencial é um pipeline experimental de **tradução automática com overlay**: o sistema detecta balões de texto na página, executa OCR (Tesseract via [Tess4J](http://tess4j.sourceforge.net)), envia o texto a uma API de tradução e renderiza o resultado por cima da imagem original. A funcionalidade é inspirada no [FrankYomik](https://github.com/akitaonrails/FrankYomik) de Fabio Akita.
 
@@ -291,7 +291,7 @@ chore: atualiza versão do Jackson para 2.17
 ### Pull Requests
 
 - Título descritivo + link do card do Trello na descrição.
-- **Mínimo de 1 aprovação** do par oposto antes do merge.
+- **Mínimo de 1 aprovação** de outro membro do time antes do merge (ver `CONTRIBUTING.md` §3 para a rotação par + solo).
 - CI (a partir da Sprint 3) deve estar verde.
 - Sem auto-merge.
 
@@ -314,6 +314,8 @@ A documentação completa está na pasta [`/docs`](./docs):
 | `Casos_de_Uso.docx`                | UC1–UC4 com fluxos, exceções e Regras de Negócio                |
 | `Casos_de_Teste.docx`              | 33 casos de teste cobrindo todos os UCs e RNs                   |
 | `Estimativas_UCP.xlsx`             | Cálculo Use Case Points com TCF, ECF e distribuição por sprint  |
+| `Checklist_Sprint1.xlsx`           | 22 itens da Entrega 1 com status, responsáveis e evidências     |
+| `atas/`                            | Atas de Planning, Daily, Review, Retro + backlog do Trello      |
 
 ---
 

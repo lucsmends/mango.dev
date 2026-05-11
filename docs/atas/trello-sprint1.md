@@ -7,10 +7,18 @@
 
 | Configuração | Valor |
 |--------------|-------|
-| **Nome do board** | Mango — Sprint 1 |
-| **Visibilidade** | Workspace (todos os 4 devs como membros) |
+| **Nome do board** | Mango — Sprint 1 (Unisinos · 2026/1) |
+| **Visibilidade** | Workspace (3 devs como membros) |
 | **Colunas** | Backlog · A Fazer · Em Progresso · Revisão · Concluído |
 | **Etiquetas (Labels)** | 🔵 Produto · 🟣 Processo · 🟠 Configuração · 🟢 Qualidade · 🔴 Bloqueado |
+| **Membros** | Max Soares · Lucas Mendes · Lorenzo Oliveira |
+
+## Composição da Sprint 1
+
+| Função | Membros |
+|--------|---------|
+| **Par da semana** (fatia vertical do UC) | Max Soares + Lucas Mendes |
+| **Solo da semana** (fatia complementar + revisão cruzada) | Lorenzo Oliveira |
 
 ## Cards (22 itens)
 
@@ -19,7 +27,7 @@
 #### Card 1 — Levantar e listar todos os Casos de Uso
 - **Lista inicial:** Concluído
 - **Etiquetas:** Produto · UC · Escopo
-- **Responsável:** Equipe
+- **Responsável:** Par (Max + Lucas)
 - **Checklist:**
   - [x] UC1 — Catálogo e Busca
   - [x] UC2 — Leitor de Capítulos
@@ -30,13 +38,13 @@
 #### Card 2 — Detalhar cada UC (atores, fluxos, exceções)
 - **Lista inicial:** Concluído
 - **Etiquetas:** Produto · Requisitos
-- **Responsável:** Equipe (Par A: UC1+UC2 · Par B: UC3+UC4)
+- **Responsável:** Par (Max + Lucas)
 - **Anexo:** `docs/Casos_de_Uso.docx`
 
 #### Card 3 — Definir as Regras de Negócio (RN) de cada UC
 - **Lista inicial:** Concluído
 - **Etiquetas:** Produto · RN
-- **Responsável:** Equipe
+- **Responsável:** Par (Max + Lucas)
 - **Anexo:** `docs/Casos_de_Uso.docx` (apêndice de rastreabilidade)
 
 #### Card 4 — Definir escopo do MVP por sprint
@@ -62,10 +70,10 @@
 #### Card 7 — Configurar Trello da Sprint 1
 - **Lista inicial:** Em Progresso
 - **Etiquetas:** Processo · Trello
-- **Responsável:** Scrum Master
+- **Responsável:** Lorenzo (Scrum Master)
 - **Checklist:**
   - [ ] Criar workspace
-  - [ ] Adicionar 4 membros
+  - [ ] Adicionar Max, Lucas e Lorenzo como membros
   - [ ] Criar 5 colunas
   - [ ] Criar 22 cards (este documento)
   - [ ] Linkar URL no README
@@ -73,7 +81,7 @@
 #### Card 8 — Sprint Planning
 - **Lista inicial:** A Fazer
 - **Etiquetas:** Processo · Cerimônia
-- **Responsável:** Scrum Master
+- **Responsável:** Lorenzo (Scrum Master)
 - **Anexo:** `docs/atas/planning-sprint1.md`
 
 #### Card 9 — Dailies da Sprint 1
@@ -91,25 +99,25 @@
 #### Card 11 — Sprint Retrospective
 - **Lista inicial:** A Fazer
 - **Etiquetas:** Processo · Cerimônia
-- **Responsável:** Scrum Master
+- **Responsável:** Lorenzo (Scrum Master)
 - **Anexo:** `docs/atas/retro-sprint1.md`
 
 ### 🟠 Configuração de Software
 
 #### Card 12 — Criar e configurar repositório no GitHub
-- **Lista inicial:** Em Progresso
+- **Lista inicial:** Concluído
 - **Etiquetas:** Configuração · Git
-- **Responsável:** Max
+- **Responsável:** Lucas (Owner do repo)
 - **Checklist:**
-  - [ ] Repo público criado
-  - [ ] 4 colaboradores adicionados
-  - [ ] Branch protection na `main` e `develop`
-  - [ ] URL linkada no README
+  - [x] Repo público criado em `lucsmends/mango.dev`
+  - [ ] 2 colaboradores adicionados (Max, Lorenzo)
+  - [x] Branch protection na `main`
+  - [x] URL linkada no README
 
 #### Card 13 — Configurar GitFlow (main + develop)
-- **Lista inicial:** A Fazer
+- **Lista inicial:** Concluído
 - **Etiquetas:** Configuração · Git · GitFlow
-- **Responsável:** Max
+- **Responsável:** Lucas
 
 #### Card 14 — Documentar fluxo de PRs cruzados
 - **Lista inicial:** Concluído
@@ -120,13 +128,13 @@
 #### Card 15 — Estrutura inicial de diretórios (MVC + Service Layer)
 - **Lista inicial:** Concluído
 - **Etiquetas:** Configuração · Arquitetura
-- **Responsável:** Equipe
+- **Responsável:** Lorenzo (solo)
 - **Anexo:** `src/main/java/com/mango/...`
 
 #### Card 16 — Configurar pom.xml (Maven, Java 21, JavaFX, H2)
 - **Lista inicial:** Concluído
 - **Etiquetas:** Configuração · Maven
-- **Responsável:** Equipe
+- **Responsável:** Lorenzo (solo)
 - **Anexo:** `pom.xml`
 
 #### Card 17 — Elaborar README.md
@@ -138,25 +146,24 @@
 #### Card 18 — Criar .gitignore
 - **Lista inicial:** Concluído
 - **Etiquetas:** Configuração · Git
-- **Responsável:** Equipe
+- **Responsável:** Lorenzo (solo)
 - **Anexo:** `.gitignore`
 
-#### Card 19 — Commit inicial de todos os 4 devs
+#### Card 19 — Commit inicial dos 3 devs
 - **Lista inicial:** Em Progresso
 - **Etiquetas:** Configuração · Git
 - **Responsável:** Todos
 - **Checklist:**
-  - [ ] Max — 1+ commit
-  - [ ] [Dev 2] — 1+ commit
-  - [ ] [Dev 3] — 1+ commit
-  - [ ] [Dev 4] — 1+ commit
+  - [x] Max Soares — 10+ commits
+  - [x] Lucas Mendes — 1+ commit (Initial commit)
+  - [ ] Lorenzo Oliveira — 1+ commit pendente
 
 ### 🟢 Qualidade
 
 #### Card 20 — Elaborar Casos de Teste para UC1
 - **Lista inicial:** Concluído
 - **Etiquetas:** Qualidade · QA
-- **Responsável:** Equipe
+- **Responsável:** Lorenzo (solo)
 - **Anexo:** `docs/Casos_de_Teste.docx` (CT-001 a CT-010)
 
 #### Card 21 — Checklist Sprint 1 com responsáveis e status
@@ -165,22 +172,20 @@
 - **Responsável:** Equipe
 - **Anexo:** `docs/Checklist_Sprint1.xlsx`
 
-#### Card 22 — Revisão cruzada Par A ↔ Par B
+#### Card 22 — Revisão cruzada par ↔ solo
 - **Lista inicial:** A Fazer
 - **Etiquetas:** Qualidade · Revisão
-- **Responsável:** Pares
+- **Responsável:** Equipe
 - **Checklist:**
-  - [ ] Par B validou Casos de Uso UC1+UC2 do Par A
-  - [ ] Par A validou Casos de Uso UC3+UC4 do Par B
-  - [ ] Par B validou Plano de Projeto e README do Par A
-  - [ ] Par A validou Estimativas e pom.xml do Par B
+  - [ ] Lorenzo (solo) validou Casos de Uso UC1-UC4 do Par (Max + Lucas)
+  - [ ] Par (Max + Lucas) validou pom.xml, estrutura e Casos de Teste do Lorenzo
   - [ ] Evidência registrada em `docs/atas/revisao-cruzada-sprint1.md`
 
 ---
 
 ## Como importar rapidamente no Trello
 
-1. Abra o Trello e crie um board chamado **"Mango — Sprint 1"**.
+1. Abra o Trello e crie um board chamado **"Mango — Sprint 1 (Unisinos · 2026/1)"**.
 2. Crie as 5 colunas: Backlog, A Fazer, Em Progresso, Revisão, Concluído.
 3. Crie as 5 etiquetas coloridas (Produto, Processo, Configuração, Qualidade, Bloqueado).
 4. Para cada card acima:

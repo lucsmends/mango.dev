@@ -3,21 +3,20 @@
 | Campo | Valor |
 |-------|-------|
 | **Sprint** | Sprint 1 — Planejamento e Estruturação |
+| **Disciplina** | Implementação de Software — Unisinos — 2026/1 |
 | **Data** | 09/05/2026 |
 | **Horário** | 18:30 – 19:00 |
 | **Duração** | 30 minutos |
-| **Local** | [Discord / Sala 401] |
-| **Facilitador** | Scrum Master |
+| **Local** | [Discord / Sala de aula Unisinos] |
+| **Facilitador** | Lorenzo Oliveira (Scrum Master) |
 
 ## Participantes
 
-| Papel | Nome | Presença |
-|-------|------|----------|
-| Product Owner | Max Ho Soares | ⬜ |
-| Scrum Master | [a definir] | ⬜ |
-| Dev — Par A | [a definir] | ⬜ |
-| Dev — Par B | [a definir] | ⬜ |
-| Dev — Par B | [a definir] | ⬜ |
+| Membro | Papel | Presença |
+|--------|-------|----------|
+| Max Soares | Dev · Product Owner | ⬜ |
+| Lucas Mendes | Dev · Owner do repositório | ⬜ |
+| Lorenzo Oliveira | Dev · Scrum Master | ⬜ |
 
 ## Formato: Start · Stop · Continue
 
@@ -61,7 +60,7 @@
 | Indicador | Planejado | Real |
 |-----------|-----------|------|
 | Itens da Sprint | 22 | ⬜ |
-| Horas estimadas (total equipe) | ~55 | ⬜ |
+| Horas estimadas (total equipe) | ~73 | ⬜ |
 | Horas reais (total equipe) | — | ⬜ |
 | Cards do Trello concluídos | ⬜ | ⬜ |
 
