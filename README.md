@@ -32,7 +32,7 @@
 
 ## Visão geral
 
-O **Mango** é um leitor de mangás desktop desenvolvido como trabalho da disciplina de **Implementação de Software** (PUCRS — 2026/1). O sistema consome o catálogo público do [MangaDex](https://api.mangadex.org) e oferece uma experiência de leitura confortável com biblioteca pessoal persistente.
+O **Mango** é um leitor de mangás desktop desenvolvido como trabalho da disciplina de **Implementação de Software** (UNISINOS — 2026/1). O sistema consome o catálogo público do [MangaDex](https://api.mangadex.org) e oferece uma experiência de leitura confortável com biblioteca pessoal persistente.
 
 O grande diferencial é um pipeline experimental de **tradução automática com overlay**: o sistema detecta balões de texto na página, executa OCR (Tesseract via [Tess4J](http://tess4j.sourceforge.net)), envia o texto a uma API de tradução e renderiza o resultado por cima da imagem original. A funcionalidade é inspirada no [FrankYomik](https://github.com/akitaonrails/FrankYomik) de Fabio Akita.
 
