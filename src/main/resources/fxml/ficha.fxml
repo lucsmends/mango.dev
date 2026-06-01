@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.mango.controller.FichaController"
+            styleClass="ficha-root">
+
+    <top>
+        <HBox styleClass="barra-superior">
+            <Button text="◀ Voltar ao catálogo" onAction="#onVoltar"/>
+        </HBox>
+    </top>
+
+    <center>
+        <HBox spacing="20" styleClass="ficha-conteudo">
+            <VBox spacing="8" alignment="TOP_CENTER">
+                <ImageView fx:id="imgCapa" fitWidth="240" fitHeight="340" preserveRatio="true"/>
+                <Label fx:id="lblStatus" styleClass="ficha-status"/>
+            </VBox>
+
+            <VBox spacing="10" HBox.hgrow="ALWAYS">
+                <Label fx:id="lblTitulo" styleClass="ficha-titulo" wrapText="true"/>
+                <Label fx:id="lblAutor" styleClass="ficha-autor"/>
+                <Label fx:id="lblGeneros" styleClass="ficha-generos" wrapText="true"/>
+                <ScrollPane fitToWidth="true" prefHeight="160" styleClass="ficha-sinopse-area">
+                    <content>
+                        <Label fx:id="lblSinopse" wrapText="true" styleClass="ficha-sinopse"/>
+                    </content>
+                </ScrollPane>
+                <Label text="Capítulos" styleClass="secao-titulo"/>
+                <Label fx:id="lblStatusCapitulos" styleClass="status"/>
+                <ListView fx:id="listaCapitulos" VBox.vgrow="ALWAYS"/>
+            </VBox>
+        </HBox>
+    </center>
+
+</BorderPane>
