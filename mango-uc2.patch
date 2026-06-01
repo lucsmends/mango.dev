@@ -1,0 +1,1923 @@
+diff --git a/COMO_APLICAR_UC2.md b/COMO_APLICAR_UC2.md
+new file mode 100644
+index 0000000..d136531
+--- /dev/null
++++ b/COMO_APLICAR_UC2.md
+@@ -0,0 +1,91 @@
++# UC2 — Leitor de capítulos Mango
++
++Este pacote foi montado para ser copiado para a raiz do repositório `mango.dev`.
++
++## O que entra no projeto
++
++Arquivos adicionados/alterados:
++
++- `src/main/java/com/mango/Main.java` — abre temporariamente a tela do UC2 para testes.
++- `src/main/java/com/mango/view/LeitorCapituloLauncher.java` — helper para abrir o leitor a partir do UC1 depois.
++- `src/main/java/com/mango/controller/LeitorCapituloController.java`
++- `src/main/java/com/mango/model/*`
++- `src/main/java/com/mango/service/*`
++- `src/main/java/com/mango/repository/*`
++- `src/main/java/com/mango/integration/mangadex/*`
++- `src/main/java/com/mango/config/*`
++- `src/main/resources/fxml/leitor-capitulo.fxml`
++- `src/main/resources/css/leitor.css`
++- `src/test/java/com/mango/service/LeituraServiceTest.java`
++
++Pelo `pom.xml` que está no GitHub, o projeto já tem JavaFX, Jackson e JUnit, então este pacote não altera o `pom.xml`.
++
++## Como aplicar pelo ZIP
++
++1. Crie uma branch:
++
++```bash
++git checkout -b implementa-uc2
++```
++
++2. Extraia/copiar o conteúdo deste pacote para a raiz do projeto, mantendo a estrutura `src/...`.
++
++3. Confira as alterações:
++
++```bash
++git status
++```
++
++4. Compile:
++
++```bash
++mvn clean compile
++```
++
++5. Rode:
++
++```bash
++mvn javafx:run
++```
++
++A aplicação vai abrir direto a tela do leitor. Como o UC1 ainda não está pronto no repositório, a tela tem um campo `Capítulo ID` para colar o ID real de um capítulo do MangaDex e testar o leitor.
++
++## Como aplicar pelo patch
++
++Na raiz do projeto, coloque o arquivo `mango-uc2.patch` e rode:
++
++```bash
++git checkout -b implementa-uc2
++git apply --check mango-uc2.patch
++git apply mango-uc2.patch
++mvn clean compile
++```
++
++Se o patch falhar por diferença no `Main.java`, use o ZIP e copie os arquivos manualmente.
++
++## Como conectar com o UC1 depois
++
++Quando a tela/lista de capítulos do UC1 estiver pronta, chame:
++
++```java
++import com.mango.view.LeitorCapituloLauncher;
++
++LeitorCapituloLauncher.abrir(capituloSelecionado.getId());
++```
++
++O valor precisa ser o ID real do capítulo do MangaDex.
++
++## Funcionalidades implementadas
++
++- Modo página única.
++- Modo página dupla.
++- Modo scroll vertical.
++- Zoom de 25% a 400%.
++- Ir para página específica.
++- Atalhos de teclado: esquerda/direita, espaço, +, -, F11 e Esc.
++- Cache local de páginas por 7 dias.
++- Limite de cache de 1 GB.
++- Pré-carregamento das próximas 2 páginas.
++- Retomada do progresso de leitura.
++- Marcação automática como lido ao chegar na última página.
++- Botão de tentar novamente em falha de download.
+diff --git a/src/main/java/com/mango/Main.java b/src/main/java/com/mango/Main.java
+index 7fc2b10..3c6881a 100644
+--- a/src/main/java/com/mango/Main.java
++++ b/src/main/java/com/mango/Main.java
+@@ -1,4 +1,41 @@
+-package com.mango; import javafx.application.Application; import javafx.fxml.FXMLLoader; import javafx.scene.Scene; import javafx.stage.Stage; import org.slf4j.Logger; import org.slf4j.LoggerFactory; /** * Ponto de entrada da aplicação Mango. * *
++package com.mango;
+ 
+-Inicializa o JavaFX, carrega a tela inicial (catálogo) e configura * o banco H2 local. As regras de negócio ficam na camada Service; este * Main apenas orquestra o bootstrap.
+-*/ public class Main extends Application { private static final Logger log = LoggerFactory.getLogger(Main.class); @Override public void start(final Stage primaryStage) throws Exception { log.info("Iniciando Mango v{}", getClass().getPackage().getImplementationVersion()); // TODO Sprint 2: carregar FXML real da tela de catálogo // FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/catalogo.fxml")); // Scene scene = new Scene(loader.load(), 1280, 800); primaryStage.setTitle("Mango — Leitor de Mangás"); // primaryStage.setScene(scene); primaryStage.setWidth(1280); primaryStage.setHeight(800); primaryStage.show(); log.info("Janela principal exibida"); } @Override public void stop() { log.info("Encerrando Mango"); } public static void main(final String[] args) { launch(args); } }
++import com.mango.model.ModoLeitura;
++import com.mango.view.LeitorCapituloLauncher;
++
++import javafx.application.Application;
++import javafx.stage.Stage;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++/**
++ * Ponto de entrada da aplicação Mango.
++ *
++ * Temporariamente, enquanto o UC1 ainda não tem tela de catálogo pronta,
++ * o Main abre direto a tela do UC2 para facilitar testes do leitor.
++ */
++public final class Main extends Application {
++    private static final Logger log = LoggerFactory.getLogger(Main.class);
++
++    @Override
++    public void start(final Stage primaryStage) {
++        log.info("Iniciando Mango");
++
++        final String chapterId = getParameters().getUnnamed().isEmpty()
++                ? null
++                : getParameters().getUnnamed().get(0);
++
++        LeitorCapituloLauncher.abrirNoStage(primaryStage, chapterId, ModoLeitura.PAGINA_UNICA);
++        log.info("Tela do leitor exibida");
++    }
++
++    @Override
++    public void stop() {
++        log.info("Encerrando Mango");
++    }
++
++    public static void main(final String[] args) {
++        launch(args);
++    }
++}
+diff --git a/src/main/java/com/mango/config/AppPaths.java b/src/main/java/com/mango/config/AppPaths.java
+new file mode 100644
+index 0000000..cb65347
+--- /dev/null
++++ b/src/main/java/com/mango/config/AppPaths.java
+@@ -0,0 +1,20 @@
++package com.mango.config;
++
++import java.nio.file.Path;
++
++public final class AppPaths {
++    private AppPaths() {
++    }
++
++    public static Path mangoHome() {
++        return Path.of(System.getProperty("user.home"), ".mango");
++    }
++
++    public static Path cachePaginas() {
++        return mangoHome().resolve("cache").resolve("paginas");
++    }
++
++    public static Path progressoLeitura() {
++        return mangoHome().resolve("progresso-leitura.properties");
++    }
++}
+diff --git a/src/main/java/com/mango/config/LeituraModuleFactory.java b/src/main/java/com/mango/config/LeituraModuleFactory.java
+new file mode 100644
+index 0000000..b558d13
+--- /dev/null
++++ b/src/main/java/com/mango/config/LeituraModuleFactory.java
+@@ -0,0 +1,20 @@
++package com.mango.config;
++
++import com.mango.integration.mangadex.MangaDexChapterPageProvider;
++import com.mango.repository.FileProgressoLeituraRepository;
++import com.mango.repository.ProgressoLeituraRepository;
++import com.mango.service.ChapterPageProvider;
++import com.mango.service.LeituraService;
++import com.mango.service.PageCacheService;
++
++public final class LeituraModuleFactory {
++    private LeituraModuleFactory() {
++    }
++
++    public static LeituraService criarPadrao() {
++        final ChapterPageProvider pageProvider = new MangaDexChapterPageProvider(false);
++        final PageCacheService pageCacheService = new PageCacheService(AppPaths.cachePaginas(), pageProvider);
++        final ProgressoLeituraRepository progressoRepository = new FileProgressoLeituraRepository(AppPaths.progressoLeitura());
++        return new LeituraService(pageProvider, pageCacheService, progressoRepository);
++    }
++}
+diff --git a/src/main/java/com/mango/controller/LeitorCapituloController.java b/src/main/java/com/mango/controller/LeitorCapituloController.java
+new file mode 100644
+index 0000000..05ea16a
+--- /dev/null
++++ b/src/main/java/com/mango/controller/LeitorCapituloController.java
+@@ -0,0 +1,377 @@
++package com.mango.controller;
++
++import com.mango.model.ModoLeitura;
++import com.mango.model.SessaoLeitura;
++import com.mango.service.LeituraService;
++
++import javafx.application.Platform;
++import javafx.fxml.FXML;
++import javafx.scene.Scene;
++import javafx.scene.control.Button;
++import javafx.scene.control.ComboBox;
++import javafx.scene.control.Label;
++import javafx.scene.control.Slider;
++import javafx.scene.control.TextField;
++import javafx.scene.image.Image;
++import javafx.scene.image.ImageView;
++import javafx.scene.input.KeyCode;
++import javafx.scene.input.KeyEvent;
++import javafx.scene.layout.BorderPane;
++import javafx.scene.layout.HBox;
++import javafx.scene.layout.StackPane;
++import javafx.scene.layout.VBox;
++import javafx.scene.control.ScrollPane;
++import javafx.stage.Stage;
++
++import java.nio.file.Path;
++import java.util.Objects;
++import java.util.concurrent.CompletionException;
++
++public final class LeitorCapituloController {
++    @FXML private BorderPane root;
++    @FXML private ComboBox<ModoLeitura> modoComboBox;
++    @FXML private Label progressoLabel;
++    @FXML private Label statusLabel;
++    @FXML private TextField irParaField;
++    @FXML private TextField chapterIdField;
++    @FXML private Slider zoomSlider;
++    @FXML private Button tentarNovamenteButton;
++    @FXML private StackPane paginaUnicaContainer;
++    @FXML private HBox paginaDuplaContainer;
++    @FXML private ScrollPane scrollPane;
++    @FXML private VBox scrollContent;
++    @FXML private ImageView paginaUnicaImage;
++    @FXML private ImageView paginaEsquerdaImage;
++    @FXML private ImageView paginaDireitaImage;
++
++    private LeituraService leituraService;
++    private SessaoLeitura sessao;
++    private boolean atualizandoScrollInternamente;
++
++    public void setLeituraService(final LeituraService leituraService) {
++        this.leituraService = Objects.requireNonNull(leituraService, "leituraService");
++    }
++
++    public void abrirCapitulo(final String capituloId, final ModoLeitura modoInicial) {
++        validarServiceConfigurado();
++        if (capituloId == null || capituloId.isBlank()) {
++            mostrarStatus("Informe o ID do capítulo para abrir o leitor.");
++            return;
++        }
++        chapterIdField.setText(capituloId.strip());
++        mostrarStatus("Carregando capítulo...");
++
++        leituraService.abrirCapitulo(capituloId, modoInicial)
++                .whenComplete((novaSessao, error) -> Platform.runLater(() -> {
++                    if (error != null) {
++                        mostrarErro(error);
++                        return;
++                    }
++                    this.sessao = novaSessao;
++                    modoComboBox.setValue(novaSessao.modoLeitura());
++                    zoomSlider.setValue(novaSessao.zoom() * 100.0);
++                    renderizar();
++                    mostrarStatus("Capítulo aberto.");
++                }));
++    }
++
++    @FXML
++    private void initialize() {
++        modoComboBox.getItems().setAll(ModoLeitura.values());
++        modoComboBox.setOnAction(event -> alterarModo());
++
++        zoomSlider.setMin(25);
++        zoomSlider.setMax(400);
++        zoomSlider.setValue(100);
++        zoomSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
++            if (sessao == null) {
++                return;
++            }
++            leituraService.alterarZoom(sessao, newValue.doubleValue() / 100.0);
++            aplicarZoom();
++        });
++
++        scrollPane.vvalueProperty().addListener((observable, oldValue, newValue) -> atualizarProgressoPorScroll());
++        tentarNovamenteButton.setVisible(false);
++        tentarNovamenteButton.setManaged(false);
++
++        root.sceneProperty().addListener((observable, oldScene, newScene) -> configurarAtalhos(newScene));
++    }
++
++
++    @FXML
++    private void abrirCapituloInformado() {
++        if (chapterIdField == null) {
++            return;
++        }
++
++        final String capituloId = chapterIdField.getText() == null
++                ? ""
++                : chapterIdField.getText().strip();
++
++        if (capituloId.isBlank()) {
++            mostrarStatus("Cole o ID do capítulo do MangaDex antes de abrir.");
++            return;
++        }
++
++        final ModoLeitura modoInicial = modoComboBox.getValue() == null
++                ? ModoLeitura.PAGINA_UNICA
++                : modoComboBox.getValue();
++
++        abrirCapitulo(capituloId, modoInicial);
++    }
++
++    @FXML
++    private void proximaPagina() {
++        if (sessao == null) {
++            return;
++        }
++        leituraService.proximaPagina(sessao)
++                .whenComplete((path, error) -> Platform.runLater(() -> finalizarNavegacao(error)));
++    }
++
++    @FXML
++    private void paginaAnterior() {
++        if (sessao == null) {
++            return;
++        }
++        leituraService.paginaAnterior(sessao)
++                .whenComplete((path, error) -> Platform.runLater(() -> finalizarNavegacao(error)));
++    }
++
++    @FXML
++    private void irParaPagina() {
++        if (sessao == null) {
++            return;
++        }
++
++        try {
++            final int pagina = Integer.parseInt(irParaField.getText().strip());
++            leituraService.irParaPagina(sessao, pagina)
++                    .whenComplete((path, error) -> Platform.runLater(() -> finalizarNavegacao(error)));
++        } catch (final NumberFormatException exception) {
++            mostrarStatus("Informe um número de página válido.");
++        }
++    }
++
++    @FXML
++    private void tentarNovamentePaginaAtual() {
++        if (sessao == null) {
++            return;
++        }
++        mostrarStatus("Tentando baixar a página novamente...");
++        leituraService.tentarNovamentePaginaAtual(sessao)
++                .whenComplete((path, error) -> Platform.runLater(() -> finalizarNavegacao(error)));
++    }
++
++    private void alterarModo() {
++        if (sessao == null || modoComboBox.getValue() == null) {
++            return;
++        }
++        leituraService.alterarModo(sessao, modoComboBox.getValue());
++        renderizar();
++    }
++
++    private void configurarAtalhos(final Scene scene) {
++        if (scene == null) {
++            return;
++        }
++        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
++            if (event.getCode() == KeyCode.RIGHT || event.getCode() == KeyCode.SPACE) {
++                proximaPagina();
++                event.consume();
++            } else if (event.getCode() == KeyCode.LEFT) {
++                paginaAnterior();
++                event.consume();
++            } else if (event.getCode() == KeyCode.ADD || event.getCode() == KeyCode.PLUS || event.getCode() == KeyCode.EQUALS) {
++                zoomSlider.setValue(Math.min(400, zoomSlider.getValue() + 25));
++                event.consume();
++            } else if (event.getCode() == KeyCode.SUBTRACT || event.getCode() == KeyCode.MINUS) {
++                zoomSlider.setValue(Math.max(25, zoomSlider.getValue() - 25));
++                event.consume();
++            } else if (event.getCode() == KeyCode.F11) {
++                alternarTelaCheia();
++                event.consume();
++            } else if (event.getCode() == KeyCode.ESCAPE) {
++                fecharJanela();
++                event.consume();
++            }
++        });
++    }
++
++    private void renderizar() {
++        if (sessao == null) {
++            return;
++        }
++
++        atualizarIndicadores();
++        aplicarVisibilidadeModo(sessao.modoLeitura());
++        tentarNovamenteButton.setVisible(false);
++        tentarNovamenteButton.setManaged(false);
++
++        switch (sessao.modoLeitura()) {
++            case PAGINA_UNICA -> renderizarPaginaUnica();
++            case PAGINA_DUPLA -> renderizarPaginaDupla();
++            case SCROLL_VERTICAL -> renderizarScrollVertical();
++        }
++        aplicarZoom();
++    }
++
++    private void renderizarPaginaUnica() {
++        carregarImagem(sessao.paginaAtualIndex(), paginaUnicaImage);
++    }
++
++    private void renderizarPaginaDupla() {
++        final int primeiraPagina = sessao.paginaAtualIndex();
++        carregarImagem(primeiraPagina, paginaEsquerdaImage);
++
++        final int segundaPagina = primeiraPagina == 0 ? -1 : primeiraPagina + 1;
++        if (segundaPagina >= 0 && segundaPagina < sessao.totalPaginas()) {
++            paginaDireitaImage.setVisible(true);
++            paginaDireitaImage.setManaged(true);
++            carregarImagem(segundaPagina, paginaDireitaImage);
++        } else {
++            paginaDireitaImage.setImage(null);
++            paginaDireitaImage.setVisible(false);
++            paginaDireitaImage.setManaged(false);
++        }
++    }
++
++    private void renderizarScrollVertical() {
++        atualizandoScrollInternamente = true;
++        scrollContent.getChildren().clear();
++        for (int index = 0; index < sessao.totalPaginas(); index++) {
++            final ImageView imageView = criarImageViewPadrao();
++            scrollContent.getChildren().add(imageView);
++            carregarImagem(index, imageView);
++        }
++        aplicarZoom();
++        Platform.runLater(() -> {
++            if (sessao.totalPaginas() > 1) {
++                scrollPane.setVvalue((double) sessao.paginaAtualIndex() / (sessao.totalPaginas() - 1));
++            } else {
++                scrollPane.setVvalue(0);
++            }
++            atualizandoScrollInternamente = false;
++        });
++    }
++
++    private ImageView criarImageViewPadrao() {
++        final ImageView imageView = new ImageView();
++        imageView.setPreserveRatio(true);
++        imageView.setSmooth(true);
++        imageView.setFitWidth(900);
++        return imageView;
++    }
++
++    private void carregarImagem(final int paginaIndexZeroBased, final ImageView imageView) {
++        leituraService.arquivoDaPagina(sessao, paginaIndexZeroBased + 1)
++                .whenComplete((path, error) -> Platform.runLater(() -> {
++                    if (error != null) {
++                        imageView.setImage(null);
++                        mostrarPlaceholderDeErro(error);
++                        return;
++                    }
++                    exibirImagem(path, imageView);
++                }));
++    }
++
++    private void exibirImagem(final Path path, final ImageView imageView) {
++        imageView.setImage(new Image(path.toUri().toString(), true));
++        mostrarStatus("Página " + sessao.paginaAtual() + " de " + sessao.totalPaginas());
++    }
++
++    private void finalizarNavegacao(final Throwable error) {
++        if (error != null) {
++            mostrarErro(error);
++            return;
++        }
++        renderizar();
++    }
++
++    private void aplicarVisibilidadeModo(final ModoLeitura modoLeitura) {
++        final boolean paginaUnica = modoLeitura == ModoLeitura.PAGINA_UNICA;
++        final boolean paginaDupla = modoLeitura == ModoLeitura.PAGINA_DUPLA;
++        final boolean scrollVertical = modoLeitura == ModoLeitura.SCROLL_VERTICAL;
++
++        paginaUnicaContainer.setVisible(paginaUnica);
++        paginaUnicaContainer.setManaged(paginaUnica);
++        paginaDuplaContainer.setVisible(paginaDupla);
++        paginaDuplaContainer.setManaged(paginaDupla);
++        scrollPane.setVisible(scrollVertical);
++        scrollPane.setManaged(scrollVertical);
++    }
++
++    private void aplicarZoom() {
++        if (sessao == null) {
++            return;
++        }
++        final double zoom = sessao.zoom();
++        paginaUnicaImage.setScaleX(zoom);
++        paginaUnicaImage.setScaleY(zoom);
++        paginaEsquerdaImage.setScaleX(zoom);
++        paginaEsquerdaImage.setScaleY(zoom);
++        paginaDireitaImage.setScaleX(zoom);
++        paginaDireitaImage.setScaleY(zoom);
++        scrollContent.getChildren().forEach(node -> {
++            node.setScaleX(zoom);
++            node.setScaleY(zoom);
++        });
++    }
++
++    private void atualizarIndicadores() {
++        progressoLabel.setText("Página " + sessao.paginaAtual() + " / " + sessao.totalPaginas());
++        irParaField.setPromptText("1-" + sessao.totalPaginas());
++        if (sessao.concluido()) {
++            mostrarStatus("Capítulo marcado como lido.");
++        }
++    }
++
++    private void atualizarProgressoPorScroll() {
++        if (sessao == null || sessao.modoLeitura() != ModoLeitura.SCROLL_VERTICAL || atualizandoScrollInternamente) {
++            return;
++        }
++        if (sessao.totalPaginas() <= 1) {
++            return;
++        }
++
++        final int paginaCalculada = (int) Math.round(scrollPane.getVvalue() * (sessao.totalPaginas() - 1)) + 1;
++        if (paginaCalculada != sessao.paginaAtual()) {
++            leituraService.irParaPagina(sessao, paginaCalculada);
++            atualizarIndicadores();
++        }
++    }
++
++    private void mostrarPlaceholderDeErro(final Throwable error) {
++        mostrarErro(error);
++        tentarNovamenteButton.setVisible(true);
++        tentarNovamenteButton.setManaged(true);
++    }
++
++    private void mostrarErro(final Throwable error) {
++        final Throwable causa = error instanceof CompletionException && error.getCause() != null
++                ? error.getCause()
++                : error;
++        mostrarStatus(causa.getMessage() == null ? "Falha inesperada no leitor." : causa.getMessage());
++    }
++
++    private void mostrarStatus(final String mensagem) {
++        statusLabel.setText(mensagem);
++    }
++
++    private void validarServiceConfigurado() {
++        if (leituraService == null) {
++            throw new IllegalStateException("LeituraService não foi configurado no controller.");
++        }
++    }
++
++    private void alternarTelaCheia() {
++        final Stage stage = (Stage) root.getScene().getWindow();
++        stage.setFullScreen(!stage.isFullScreen());
++    }
++
++    private void fecharJanela() {
++        final Stage stage = (Stage) root.getScene().getWindow();
++        stage.close();
++    }
++}
+diff --git a/src/main/java/com/mango/integration/mangadex/MangaDexChapterPageProvider.java b/src/main/java/com/mango/integration/mangadex/MangaDexChapterPageProvider.java
+new file mode 100644
+index 0000000..571dbdc
+--- /dev/null
++++ b/src/main/java/com/mango/integration/mangadex/MangaDexChapterPageProvider.java
+@@ -0,0 +1,115 @@
++package com.mango.integration.mangadex;
++
++import com.fasterxml.jackson.databind.JsonNode;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import com.mango.service.ChapterPageProvider;
++import com.mango.service.FalhaDownloadPaginaException;
++
++import java.io.IOException;
++import java.net.URI;
++import java.net.URLEncoder;
++import java.net.http.HttpClient;
++import java.net.http.HttpRequest;
++import java.net.http.HttpResponse;
++import java.nio.charset.StandardCharsets;
++import java.time.Duration;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Objects;
++import java.util.concurrent.CompletableFuture;
++
++public final class MangaDexChapterPageProvider implements ChapterPageProvider {
++    private static final URI DEFAULT_API_BASE_URI = URI.create("https://api.mangadex.org");
++
++    private final HttpClient httpClient;
++    private final ObjectMapper objectMapper;
++    private final URI apiBaseUri;
++    private final boolean usarDataSaver;
++
++    public MangaDexChapterPageProvider() {
++        this(HttpClient.newHttpClient(), new ObjectMapper(), DEFAULT_API_BASE_URI, false);
++    }
++
++    public MangaDexChapterPageProvider(final boolean usarDataSaver) {
++        this(HttpClient.newHttpClient(), new ObjectMapper(), DEFAULT_API_BASE_URI, usarDataSaver);
++    }
++
++    public MangaDexChapterPageProvider(
++            final HttpClient httpClient,
++            final ObjectMapper objectMapper,
++            final URI apiBaseUri,
++            final boolean usarDataSaver
++    ) {
++        this.httpClient = Objects.requireNonNull(httpClient, "httpClient");
++        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
++        this.apiBaseUri = Objects.requireNonNull(apiBaseUri, "apiBaseUri");
++        this.usarDataSaver = usarDataSaver;
++    }
++
++    @Override
++    public CompletableFuture<List<URI>> listarUrlsPaginas(final String capituloId) {
++        final String idCodificado = URLEncoder.encode(capituloId, StandardCharsets.UTF_8);
++        final URI endpoint = apiBaseUri.resolve("/at-home/server/" + idCodificado);
++        final HttpRequest request = HttpRequest.newBuilder(endpoint)
++                .GET()
++                .timeout(Duration.ofSeconds(15))
++                .header("Accept", "application/json")
++                .build();
++
++        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
++                .thenApply(this::validarRespostaJson)
++                .thenApply(this::extrairUrlsPaginas);
++    }
++
++    @Override
++    public CompletableFuture<byte[]> baixarPagina(final URI paginaUri) {
++        final HttpRequest request = HttpRequest.newBuilder(paginaUri)
++                .GET()
++                .timeout(Duration.ofSeconds(30))
++                .header("User-Agent", "Mango-Academic-Reader/1.0")
++                .build();
++
++        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
++                .thenApply(response -> {
++                    if (response.statusCode() < 200 || response.statusCode() >= 300) {
++                        throw new FalhaDownloadPaginaException(
++                                "Não foi possível baixar a página. HTTP " + response.statusCode() + "."
++                        );
++                    }
++                    return response.body();
++                });
++    }
++
++    private String validarRespostaJson(final HttpResponse<String> response) {
++        if (response.statusCode() < 200 || response.statusCode() >= 300) {
++            throw new FalhaDownloadPaginaException(
++                    "Não foi possível obter as páginas do capítulo. HTTP " + response.statusCode() + "."
++            );
++        }
++        return response.body();
++    }
++
++    private List<URI> extrairUrlsPaginas(final String json) {
++        try {
++            final JsonNode root = objectMapper.readTree(json);
++            final String baseUrl = root.path("baseUrl").asText(null);
++            final JsonNode chapter = root.path("chapter");
++            final String hash = chapter.path("hash").asText(null);
++            final JsonNode paginas = usarDataSaver ? chapter.path("dataSaver") : chapter.path("data");
++            final String modo = usarDataSaver ? "data-saver" : "data";
++
++            if (baseUrl == null || hash == null || !paginas.isArray()) {
++                throw new FalhaDownloadPaginaException("Resposta inválida da API MangaDex para as páginas do capítulo.");
++            }
++
++            final List<URI> urls = new ArrayList<>();
++            for (final JsonNode pagina : paginas) {
++                final String nomeArquivo = pagina.asText();
++                urls.add(URI.create(baseUrl + "/" + modo + "/" + hash + "/" + nomeArquivo));
++            }
++            return List.copyOf(urls);
++        } catch (final IOException exception) {
++            throw new FalhaDownloadPaginaException("Não foi possível interpretar a resposta da API MangaDex.", exception);
++        }
++    }
++}
+diff --git a/src/main/java/com/mango/model/CapituloLeitura.java b/src/main/java/com/mango/model/CapituloLeitura.java
+new file mode 100644
+index 0000000..b2c17ca
+--- /dev/null
++++ b/src/main/java/com/mango/model/CapituloLeitura.java
+@@ -0,0 +1,31 @@
++package com.mango.model;
++
++import java.net.URI;
++import java.util.List;
++import java.util.Objects;
++
++public record CapituloLeitura(
++        String id,
++        String mangaId,
++        String titulo,
++        List<URI> paginas,
++        ModoLeitura modoPadrao
++) {
++    public CapituloLeitura {
++        if (id == null || id.isBlank()) {
++            throw new IllegalArgumentException("O id do capítulo é obrigatório.");
++        }
++
++        paginas = List.copyOf(Objects.requireNonNull(paginas, "paginas"));
++        titulo = titulo == null || titulo.isBlank() ? "Capítulo " + id : titulo.strip();
++        modoPadrao = modoPadrao == null ? ModoLeitura.PAGINA_UNICA : modoPadrao;
++    }
++
++    public int totalPaginas() {
++        return paginas.size();
++    }
++
++    public URI paginaPorIndice(final int indiceZeroBased) {
++        return paginas.get(indiceZeroBased);
++    }
++}
+diff --git a/src/main/java/com/mango/model/ModoLeitura.java b/src/main/java/com/mango/model/ModoLeitura.java
+new file mode 100644
+index 0000000..10b88f5
+--- /dev/null
++++ b/src/main/java/com/mango/model/ModoLeitura.java
+@@ -0,0 +1,22 @@
++package com.mango.model;
++
++public enum ModoLeitura {
++    PAGINA_UNICA("Página única"),
++    PAGINA_DUPLA("Página dupla"),
++    SCROLL_VERTICAL("Scroll vertical");
++
++    private final String rotulo;
++
++    ModoLeitura(final String rotulo) {
++        this.rotulo = rotulo;
++    }
++
++    public String getRotulo() {
++        return rotulo;
++    }
++
++    @Override
++    public String toString() {
++        return rotulo;
++    }
++}
+diff --git a/src/main/java/com/mango/model/ProgressoLeitura.java b/src/main/java/com/mango/model/ProgressoLeitura.java
+new file mode 100644
+index 0000000..1a20533
+--- /dev/null
++++ b/src/main/java/com/mango/model/ProgressoLeitura.java
+@@ -0,0 +1,38 @@
++package com.mango.model;
++
++import java.time.Instant;
++
++public record ProgressoLeitura(
++        String capituloId,
++        int paginaAtual,
++        int totalPaginas,
++        boolean concluido,
++        Instant atualizadoEm
++) {
++    public ProgressoLeitura {
++        if (capituloId == null || capituloId.isBlank()) {
++            throw new IllegalArgumentException("O id do capítulo é obrigatório.");
++        }
++        if (totalPaginas <= 0) {
++            throw new IllegalArgumentException("O total de páginas deve ser maior que zero.");
++        }
++        if (paginaAtual < 1 || paginaAtual > totalPaginas) {
++            throw new IllegalArgumentException("A página atual deve estar entre 1 e " + totalPaginas + ".");
++        }
++        atualizadoEm = atualizadoEm == null ? Instant.now() : atualizadoEm;
++    }
++
++    public static ProgressoLeitura emAndamento(
++            final String capituloId,
++            final int paginaAtual,
++            final int totalPaginas
++    ) {
++        return new ProgressoLeitura(
++                capituloId,
++                paginaAtual,
++                totalPaginas,
++                paginaAtual == totalPaginas,
++                Instant.now()
++        );
++    }
++}
+diff --git a/src/main/java/com/mango/model/SessaoLeitura.java b/src/main/java/com/mango/model/SessaoLeitura.java
+new file mode 100644
+index 0000000..bfbfa71
+--- /dev/null
++++ b/src/main/java/com/mango/model/SessaoLeitura.java
+@@ -0,0 +1,64 @@
++package com.mango.model;
++
++import java.util.Objects;
++
++public final class SessaoLeitura {
++    private final CapituloLeitura capitulo;
++    private ModoLeitura modoLeitura;
++    private int paginaAtualIndex;
++    private double zoom;
++    private boolean concluido;
++
++    public SessaoLeitura(
++            final CapituloLeitura capitulo,
++            final ModoLeitura modoLeitura,
++            final int paginaAtualIndex
++    ) {
++        this.capitulo = Objects.requireNonNull(capitulo, "capitulo");
++        this.modoLeitura = modoLeitura == null ? capitulo.modoPadrao() : modoLeitura;
++        this.paginaAtualIndex = paginaAtualIndex;
++        this.zoom = 1.0;
++        this.concluido = false;
++    }
++
++    public CapituloLeitura capitulo() {
++        return capitulo;
++    }
++
++    public synchronized ModoLeitura modoLeitura() {
++        return modoLeitura;
++    }
++
++    public synchronized void alterarModoLeitura(final ModoLeitura modoLeitura) {
++        this.modoLeitura = modoLeitura == null ? ModoLeitura.PAGINA_UNICA : modoLeitura;
++    }
++
++    public synchronized int paginaAtualIndex() {
++        return paginaAtualIndex;
++    }
++
++    public synchronized int paginaAtual() {
++        return paginaAtualIndex + 1;
++    }
++
++    public int totalPaginas() {
++        return capitulo.totalPaginas();
++    }
++
++    public synchronized void alterarPaginaAtualIndex(final int paginaAtualIndex) {
++        this.paginaAtualIndex = paginaAtualIndex;
++        this.concluido = paginaAtualIndex == totalPaginas() - 1;
++    }
++
++    public synchronized double zoom() {
++        return zoom;
++    }
++
++    public synchronized void alterarZoom(final double zoom) {
++        this.zoom = zoom;
++    }
++
++    public synchronized boolean concluido() {
++        return concluido;
++    }
++}
+diff --git a/src/main/java/com/mango/repository/FileProgressoLeituraRepository.java b/src/main/java/com/mango/repository/FileProgressoLeituraRepository.java
+new file mode 100644
+index 0000000..07be37b
+--- /dev/null
++++ b/src/main/java/com/mango/repository/FileProgressoLeituraRepository.java
+@@ -0,0 +1,84 @@
++package com.mango.repository;
++
++import com.mango.model.ProgressoLeitura;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.OutputStream;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.time.Instant;
++import java.util.Optional;
++import java.util.Properties;
++
++public final class FileProgressoLeituraRepository implements ProgressoLeituraRepository {
++    private final Path arquivo;
++
++    public FileProgressoLeituraRepository(final Path arquivo) {
++        this.arquivo = arquivo;
++    }
++
++    @Override
++    public synchronized Optional<ProgressoLeitura> buscarPorCapitulo(final String capituloId) {
++        final Properties properties = carregarProperties();
++        final String valor = properties.getProperty(capituloId);
++        if (valor == null || valor.isBlank()) {
++            return Optional.empty();
++        }
++
++        final String[] partes = valor.split("\\|");
++        if (partes.length != 4) {
++            return Optional.empty();
++        }
++
++        try {
++            return Optional.of(new ProgressoLeitura(
++                    capituloId,
++                    Integer.parseInt(partes[0]),
++                    Integer.parseInt(partes[1]),
++                    Boolean.parseBoolean(partes[2]),
++                    Instant.parse(partes[3])
++            ));
++        } catch (final RuntimeException exception) {
++            return Optional.empty();
++        }
++    }
++
++    @Override
++    public synchronized void salvar(final ProgressoLeitura progresso) {
++        final Properties properties = carregarProperties();
++        properties.setProperty(
++                progresso.capituloId(),
++                progresso.paginaAtual()
++                        + "|" + progresso.totalPaginas()
++                        + "|" + progresso.concluido()
++                        + "|" + progresso.atualizadoEm()
++        );
++        persistirProperties(properties);
++    }
++
++    private Properties carregarProperties() {
++        final Properties properties = new Properties();
++        if (!Files.exists(arquivo)) {
++            return properties;
++        }
++
++        try (InputStream inputStream = Files.newInputStream(arquivo)) {
++            properties.load(inputStream);
++            return properties;
++        } catch (final IOException exception) {
++            throw new IllegalStateException("Não foi possível carregar o progresso de leitura.", exception);
++        }
++    }
++
++    private void persistirProperties(final Properties properties) {
++        try {
++            Files.createDirectories(arquivo.getParent());
++            try (OutputStream outputStream = Files.newOutputStream(arquivo)) {
++                properties.store(outputStream, "Mango - progresso de leitura");
++            }
++        } catch (final IOException exception) {
++            throw new IllegalStateException("Não foi possível salvar o progresso de leitura.", exception);
++        }
++    }
++}
+diff --git a/src/main/java/com/mango/repository/InMemoryProgressoLeituraRepository.java b/src/main/java/com/mango/repository/InMemoryProgressoLeituraRepository.java
+new file mode 100644
+index 0000000..5866f98
+--- /dev/null
++++ b/src/main/java/com/mango/repository/InMemoryProgressoLeituraRepository.java
+@@ -0,0 +1,21 @@
++package com.mango.repository;
++
++import com.mango.model.ProgressoLeitura;
++
++import java.util.Map;
++import java.util.Optional;
++import java.util.concurrent.ConcurrentHashMap;
++
++public final class InMemoryProgressoLeituraRepository implements ProgressoLeituraRepository {
++    private final Map<String, ProgressoLeitura> progressoPorCapitulo = new ConcurrentHashMap<>();
++
++    @Override
++    public Optional<ProgressoLeitura> buscarPorCapitulo(final String capituloId) {
++        return Optional.ofNullable(progressoPorCapitulo.get(capituloId));
++    }
++
++    @Override
++    public void salvar(final ProgressoLeitura progresso) {
++        progressoPorCapitulo.put(progresso.capituloId(), progresso);
++    }
++}
+diff --git a/src/main/java/com/mango/repository/ProgressoLeituraRepository.java b/src/main/java/com/mango/repository/ProgressoLeituraRepository.java
+new file mode 100644
+index 0000000..9f9849b
+--- /dev/null
++++ b/src/main/java/com/mango/repository/ProgressoLeituraRepository.java
+@@ -0,0 +1,11 @@
++package com.mango.repository;
++
++import com.mango.model.ProgressoLeitura;
++
++import java.util.Optional;
++
++public interface ProgressoLeituraRepository {
++    Optional<ProgressoLeitura> buscarPorCapitulo(String capituloId);
++
++    void salvar(ProgressoLeitura progresso);
++}
+diff --git a/src/main/java/com/mango/service/CapituloSemPaginasException.java b/src/main/java/com/mango/service/CapituloSemPaginasException.java
+new file mode 100644
+index 0000000..89b5f4a
+--- /dev/null
++++ b/src/main/java/com/mango/service/CapituloSemPaginasException.java
+@@ -0,0 +1,7 @@
++package com.mango.service;
++
++public final class CapituloSemPaginasException extends LeituraException {
++    public CapituloSemPaginasException() {
++        super("Este capítulo ainda não está disponível para leitura.");
++    }
++}
+diff --git a/src/main/java/com/mango/service/ChapterPageProvider.java b/src/main/java/com/mango/service/ChapterPageProvider.java
+new file mode 100644
+index 0000000..d384e4a
+--- /dev/null
++++ b/src/main/java/com/mango/service/ChapterPageProvider.java
+@@ -0,0 +1,11 @@
++package com.mango.service;
++
++import java.net.URI;
++import java.util.List;
++import java.util.concurrent.CompletableFuture;
++
++public interface ChapterPageProvider {
++    CompletableFuture<List<URI>> listarUrlsPaginas(String capituloId);
++
++    CompletableFuture<byte[]> baixarPagina(URI paginaUri);
++}
+diff --git a/src/main/java/com/mango/service/FalhaDownloadPaginaException.java b/src/main/java/com/mango/service/FalhaDownloadPaginaException.java
+new file mode 100644
+index 0000000..8968187
+--- /dev/null
++++ b/src/main/java/com/mango/service/FalhaDownloadPaginaException.java
+@@ -0,0 +1,11 @@
++package com.mango.service;
++
++public final class FalhaDownloadPaginaException extends LeituraException {
++    public FalhaDownloadPaginaException(final String message) {
++        super(message);
++    }
++
++    public FalhaDownloadPaginaException(final String message, final Throwable cause) {
++        super(message, cause);
++    }
++}
+diff --git a/src/main/java/com/mango/service/LeituraException.java b/src/main/java/com/mango/service/LeituraException.java
+new file mode 100644
+index 0000000..a67a73f
+--- /dev/null
++++ b/src/main/java/com/mango/service/LeituraException.java
+@@ -0,0 +1,11 @@
++package com.mango.service;
++
++public class LeituraException extends RuntimeException {
++    public LeituraException(final String message) {
++        super(message);
++    }
++
++    public LeituraException(final String message, final Throwable cause) {
++        super(message, cause);
++    }
++}
+diff --git a/src/main/java/com/mango/service/LeituraService.java b/src/main/java/com/mango/service/LeituraService.java
+new file mode 100644
+index 0000000..5aa62b2
+--- /dev/null
++++ b/src/main/java/com/mango/service/LeituraService.java
+@@ -0,0 +1,184 @@
++package com.mango.service;
++
++import com.mango.model.CapituloLeitura;
++import com.mango.model.ModoLeitura;
++import com.mango.model.ProgressoLeitura;
++import com.mango.model.SessaoLeitura;
++import com.mango.repository.ProgressoLeituraRepository;
++
++import java.nio.file.Path;
++import java.time.Instant;
++import java.util.List;
++import java.util.Locale;
++import java.util.Objects;
++import java.util.concurrent.CompletableFuture;
++
++public final class LeituraService {
++    public static final double ZOOM_MINIMO = 0.25;
++    public static final double ZOOM_MAXIMO = 4.00;
++    public static final double ZOOM_PADRAO = 1.00;
++
++    private final ChapterPageProvider pageProvider;
++    private final PageCacheService pageCacheService;
++    private final ProgressoLeituraRepository progressoRepository;
++
++    public LeituraService(
++            final ChapterPageProvider pageProvider,
++            final PageCacheService pageCacheService,
++            final ProgressoLeituraRepository progressoRepository
++    ) {
++        this.pageProvider = Objects.requireNonNull(pageProvider, "pageProvider");
++        this.pageCacheService = Objects.requireNonNull(pageCacheService, "pageCacheService");
++        this.progressoRepository = Objects.requireNonNull(progressoRepository, "progressoRepository");
++    }
++
++    public CompletableFuture<SessaoLeitura> abrirCapitulo(
++            final String capituloId,
++            final ModoLeitura modoPreferido
++    ) {
++        if (capituloId == null || capituloId.isBlank()) {
++            return CompletableFuture.failedFuture(new IllegalArgumentException("O id do capítulo é obrigatório."));
++        }
++
++        return pageProvider.listarUrlsPaginas(capituloId)
++                .thenApply(urls -> criarSessao(capituloId, modoPreferido, urls))
++                .thenApply(sessao -> {
++                    carregarPaginaAtual(sessao);
++                    pageCacheService.preCarregarProximas(sessao);
++                    return sessao;
++                });
++    }
++
++    public CompletableFuture<Path> paginaAtualArquivo(final SessaoLeitura sessao) {
++        return carregarPaginaAtual(sessao);
++    }
++
++    public CompletableFuture<Path> arquivoDaPagina(
++            final SessaoLeitura sessao,
++            final int paginaUmBased
++    ) {
++        final int indice = validarPagina(sessao, paginaUmBased);
++        return pageCacheService.carregarPagina(
++                sessao.capitulo().id(),
++                indice,
++                sessao.capitulo().paginaPorIndice(indice)
++        );
++    }
++
++    public CompletableFuture<Path> proximaPagina(final SessaoLeitura sessao) {
++        if (sessao.paginaAtual() >= sessao.totalPaginas()) {
++            return paginaAtualArquivo(sessao);
++        }
++        return irParaPagina(sessao, sessao.paginaAtual() + 1);
++    }
++
++    public CompletableFuture<Path> paginaAnterior(final SessaoLeitura sessao) {
++        if (sessao.paginaAtual() <= 1) {
++            return paginaAtualArquivo(sessao);
++        }
++        return irParaPagina(sessao, sessao.paginaAtual() - 1);
++    }
++
++    public CompletableFuture<Path> irParaPagina(
++            final SessaoLeitura sessao,
++            final int paginaUmBased
++    ) {
++        final int indice = validarPagina(sessao, paginaUmBased);
++        sessao.alterarPaginaAtualIndex(indice);
++        registrarProgresso(sessao);
++        pageCacheService.preCarregarProximas(sessao);
++        return carregarPaginaAtual(sessao);
++    }
++
++    public CompletableFuture<Path> tentarNovamentePaginaAtual(final SessaoLeitura sessao) {
++        final int indice = sessao.paginaAtualIndex();
++        return pageCacheService.recarregarPagina(
++                sessao.capitulo().id(),
++                indice,
++                sessao.capitulo().paginaPorIndice(indice)
++        );
++    }
++
++    public void alterarModo(final SessaoLeitura sessao, final ModoLeitura modoLeitura) {
++        sessao.alterarModoLeitura(modoLeitura);
++    }
++
++    public double alterarZoom(final SessaoLeitura sessao, final double zoomSolicitado) {
++        final double zoomLimitado = limitarZoom(zoomSolicitado);
++        sessao.alterarZoom(zoomLimitado);
++        return zoomLimitado;
++    }
++
++    public double incrementarZoom(final SessaoLeitura sessao, final double delta) {
++        return alterarZoom(sessao, sessao.zoom() + delta);
++    }
++
++    public ModoLeitura modoPadraoPorOrigem(final String idiomaOriginal) {
++        if (idiomaOriginal == null) {
++            return ModoLeitura.PAGINA_UNICA;
++        }
++        final String idioma = idiomaOriginal.toLowerCase(Locale.ROOT).strip();
++        return idioma.equals("ko") || idioma.equals("kor") || idioma.equals("coreano")
++                ? ModoLeitura.SCROLL_VERTICAL
++                : ModoLeitura.PAGINA_UNICA;
++    }
++
++    private SessaoLeitura criarSessao(
++            final String capituloId,
++            final ModoLeitura modoPreferido,
++            final List<java.net.URI> urls
++    ) {
++        if (urls == null || urls.isEmpty()) {
++            throw new CapituloSemPaginasException();
++        }
++
++        final CapituloLeitura capitulo = new CapituloLeitura(
++                capituloId,
++                null,
++                "Capítulo " + capituloId,
++                urls,
++                modoPreferido == null ? ModoLeitura.PAGINA_UNICA : modoPreferido
++        );
++
++        final int paginaInicial = progressoRepository.buscarPorCapitulo(capituloId)
++                .filter(progresso -> progresso.totalPaginas() == capitulo.totalPaginas())
++                .map(ProgressoLeitura::paginaAtual)
++                .orElse(1);
++
++        return new SessaoLeitura(capitulo, capitulo.modoPadrao(), paginaInicial - 1);
++    }
++
++    private CompletableFuture<Path> carregarPaginaAtual(final SessaoLeitura sessao) {
++        final int indice = sessao.paginaAtualIndex();
++        return pageCacheService.carregarPagina(
++                sessao.capitulo().id(),
++                indice,
++                sessao.capitulo().paginaPorIndice(indice)
++        );
++    }
++
++    private int validarPagina(final SessaoLeitura sessao, final int paginaUmBased) {
++        Objects.requireNonNull(sessao, "sessao");
++        if (paginaUmBased < 1 || paginaUmBased > sessao.totalPaginas()) {
++            throw new PaginaInvalidaException(sessao.totalPaginas());
++        }
++        return paginaUmBased - 1;
++    }
++
++    private void registrarProgresso(final SessaoLeitura sessao) {
++        progressoRepository.salvar(new ProgressoLeitura(
++                sessao.capitulo().id(),
++                sessao.paginaAtual(),
++                sessao.totalPaginas(),
++                sessao.paginaAtual() == sessao.totalPaginas(),
++                Instant.now()
++        ));
++    }
++
++    private double limitarZoom(final double zoomSolicitado) {
++        if (Double.isNaN(zoomSolicitado) || Double.isInfinite(zoomSolicitado)) {
++            return ZOOM_PADRAO;
++        }
++        return Math.max(ZOOM_MINIMO, Math.min(ZOOM_MAXIMO, zoomSolicitado));
++    }
++}
+diff --git a/src/main/java/com/mango/service/LocalImageChapterPageProvider.java b/src/main/java/com/mango/service/LocalImageChapterPageProvider.java
+new file mode 100644
+index 0000000..8423024
+--- /dev/null
++++ b/src/main/java/com/mango/service/LocalImageChapterPageProvider.java
+@@ -0,0 +1,62 @@
++package com.mango.service;
++
++import java.io.IOException;
++import java.net.URI;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.Comparator;
++import java.util.List;
++import java.util.Locale;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.Executor;
++import java.util.concurrent.Executors;
++import java.util.stream.Stream;
++
++public final class LocalImageChapterPageProvider implements ChapterPageProvider {
++    private final Path diretorioCapitulo;
++    private final Executor executor;
++
++    public LocalImageChapterPageProvider(final Path diretorioCapitulo) {
++        this(diretorioCapitulo, Executors.newVirtualThreadPerTaskExecutor());
++    }
++
++    public LocalImageChapterPageProvider(final Path diretorioCapitulo, final Executor executor) {
++        this.diretorioCapitulo = diretorioCapitulo;
++        this.executor = executor;
++    }
++
++    @Override
++    public CompletableFuture<List<URI>> listarUrlsPaginas(final String capituloId) {
++        return CompletableFuture.supplyAsync(() -> {
++            try (Stream<Path> stream = Files.list(diretorioCapitulo)) {
++                return stream
++                        .filter(Files::isRegularFile)
++                        .filter(LocalImageChapterPageProvider::ehImagem)
++                        .sorted(Comparator.comparing(path -> path.getFileName().toString()))
++                        .map(Path::toUri)
++                        .toList();
++            } catch (final IOException exception) {
++                throw new FalhaDownloadPaginaException("Não foi possível listar as páginas locais do capítulo.", exception);
++            }
++        }, executor);
++    }
++
++    @Override
++    public CompletableFuture<byte[]> baixarPagina(final URI paginaUri) {
++        return CompletableFuture.supplyAsync(() -> {
++            try {
++                return Files.readAllBytes(Path.of(paginaUri));
++            } catch (final IOException exception) {
++                throw new FalhaDownloadPaginaException("Não foi possível carregar a página local.", exception);
++            }
++        }, executor);
++    }
++
++    private static boolean ehImagem(final Path path) {
++        final String nome = path.getFileName().toString().toLowerCase(Locale.ROOT);
++        return nome.endsWith(".jpg")
++                || nome.endsWith(".jpeg")
++                || nome.endsWith(".png")
++                || nome.endsWith(".webp");
++    }
++}
+diff --git a/src/main/java/com/mango/service/PageCacheService.java b/src/main/java/com/mango/service/PageCacheService.java
+new file mode 100644
+index 0000000..544ec85
+--- /dev/null
++++ b/src/main/java/com/mango/service/PageCacheService.java
+@@ -0,0 +1,235 @@
++package com.mango.service;
++
++import com.mango.model.SessaoLeitura;
++
++import java.io.IOException;
++import java.net.URI;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.StandardOpenOption;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.time.Duration;
++import java.time.Instant;
++import java.util.Comparator;
++import java.util.HexFormat;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
++import java.util.Objects;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.Executor;
++import java.util.concurrent.Executors;
++import java.util.stream.Stream;
++
++public final class PageCacheService {
++    public static final Duration CACHE_TTL = Duration.ofDays(7);
++    public static final long MAX_CACHE_BYTES = 1024L * 1024L * 1024L;
++
++    private final Path cacheRoot;
++    private final ChapterPageProvider pageProvider;
++    private final Executor ioExecutor;
++    private final Map<String, CompletableFuture<Path>> downloadsEmAndamento;
++
++    public PageCacheService(final Path cacheRoot, final ChapterPageProvider pageProvider) {
++        this(cacheRoot, pageProvider, Executors.newVirtualThreadPerTaskExecutor());
++    }
++
++    public PageCacheService(
++            final Path cacheRoot,
++            final ChapterPageProvider pageProvider,
++            final Executor ioExecutor
++    ) {
++        this.cacheRoot = Objects.requireNonNull(cacheRoot, "cacheRoot");
++        this.pageProvider = Objects.requireNonNull(pageProvider, "pageProvider");
++        this.ioExecutor = Objects.requireNonNull(ioExecutor, "ioExecutor");
++        this.downloadsEmAndamento = new ConcurrentHashMap<>();
++    }
++
++    public CompletableFuture<Path> carregarPagina(
++            final String capituloId,
++            final int paginaIndexZeroBased,
++            final URI paginaUri
++    ) {
++        final Path arquivoCache = arquivoCache(capituloId, paginaIndexZeroBased, paginaUri);
++        if (cacheValido(arquivoCache)) {
++            return CompletableFuture.completedFuture(arquivoCache);
++        }
++
++        final String chave = arquivoCache.toAbsolutePath().toString();
++        return downloadsEmAndamento.computeIfAbsent(chave, ignored ->
++                pageProvider.baixarPagina(paginaUri)
++                        .thenApplyAsync(bytes -> salvarNoCache(arquivoCache, bytes), ioExecutor)
++                        .thenApply(path -> {
++                            aplicarLimiteTamanhoCache();
++                            return path;
++                        })
++                        .whenComplete((path, error) -> downloadsEmAndamento.remove(chave))
++        );
++    }
++
++    public CompletableFuture<Path> recarregarPagina(
++            final String capituloId,
++            final int paginaIndexZeroBased,
++            final URI paginaUri
++    ) {
++        final Path arquivoCache = arquivoCache(capituloId, paginaIndexZeroBased, paginaUri);
++        try {
++            Files.deleteIfExists(arquivoCache);
++        } catch (final IOException exception) {
++            throw new FalhaDownloadPaginaException("Não foi possível remover a página antiga do cache.", exception);
++        }
++        return carregarPagina(capituloId, paginaIndexZeroBased, paginaUri);
++    }
++
++    public void preCarregarProximas(final SessaoLeitura sessao) {
++        final int paginaAtual = sessao.paginaAtualIndex();
++        final int ultimaPaginaParaPreload = Math.min(sessao.totalPaginas() - 1, paginaAtual + 2);
++
++        for (int index = paginaAtual + 1; index <= ultimaPaginaParaPreload; index++) {
++            carregarPagina(
++                    sessao.capitulo().id(),
++                    index,
++                    sessao.capitulo().paginaPorIndice(index)
++            );
++        }
++    }
++
++    public void limparExpirados() {
++        if (!Files.exists(cacheRoot)) {
++            return;
++        }
++
++        final Instant limite = Instant.now().minus(CACHE_TTL);
++        try (Stream<Path> stream = Files.walk(cacheRoot)) {
++            stream.filter(Files::isRegularFile)
++                    .filter(path -> foiModificadoAntesDe(path, limite))
++                    .forEach(this::deletarSilenciosamente);
++        } catch (final IOException exception) {
++            throw new FalhaDownloadPaginaException("Não foi possível limpar o cache de páginas expiradas.", exception);
++        }
++    }
++
++    private boolean cacheValido(final Path arquivoCache) {
++        if (!Files.exists(arquivoCache)) {
++            return false;
++        }
++
++        try {
++            final Instant modifiedAt = Files.getLastModifiedTime(arquivoCache).toInstant();
++            return modifiedAt.isAfter(Instant.now().minus(CACHE_TTL));
++        } catch (final IOException exception) {
++            return false;
++        }
++    }
++
++    private Path salvarNoCache(final Path arquivoCache, final byte[] bytes) {
++        try {
++            Files.createDirectories(arquivoCache.getParent());
++            Files.write(
++                    arquivoCache,
++                    bytes,
++                    StandardOpenOption.CREATE,
++                    StandardOpenOption.TRUNCATE_EXISTING,
++                    StandardOpenOption.WRITE
++            );
++            return arquivoCache;
++        } catch (final IOException exception) {
++            throw new FalhaDownloadPaginaException("Não foi possível salvar a página no cache local.", exception);
++        }
++    }
++
++    private Path arquivoCache(
++            final String capituloId,
++            final int paginaIndexZeroBased,
++            final URI paginaUri
++    ) {
++        final String capituloSeguro = capituloId.replaceAll("[^a-zA-Z0-9._-]", "_");
++        final String hash = hashCurto(capituloId + "|" + paginaIndexZeroBased + "|" + paginaUri);
++        final String extensao = extensaoDaUri(paginaUri);
++        return cacheRoot.resolve(capituloSeguro)
++                .resolve("%03d-%s%s".formatted(paginaIndexZeroBased + 1, hash, extensao));
++    }
++
++    private void aplicarLimiteTamanhoCache() {
++        if (!Files.exists(cacheRoot)) {
++            return;
++        }
++
++        final List<Path> arquivos;
++        try (Stream<Path> stream = Files.walk(cacheRoot)) {
++            arquivos = stream.filter(Files::isRegularFile)
++                    .sorted(Comparator.comparing(this::ultimoAcessoOuModificacao))
++                    .toList();
++        } catch (final IOException exception) {
++            throw new FalhaDownloadPaginaException("Não foi possível verificar o tamanho do cache local.", exception);
++        }
++
++        long totalBytes = arquivos.stream().mapToLong(this::tamanhoSeguro).sum();
++        for (final Path arquivo : arquivos) {
++            if (totalBytes <= MAX_CACHE_BYTES) {
++                return;
++            }
++            final long tamanho = tamanhoSeguro(arquivo);
++            deletarSilenciosamente(arquivo);
++            totalBytes -= tamanho;
++        }
++    }
++
++    private boolean foiModificadoAntesDe(final Path path, final Instant limite) {
++        try {
++            return Files.getLastModifiedTime(path).toInstant().isBefore(limite);
++        } catch (final IOException exception) {
++            return false;
++        }
++    }
++
++    private Instant ultimoAcessoOuModificacao(final Path path) {
++        try {
++            return Files.getLastModifiedTime(path).toInstant();
++        } catch (final IOException exception) {
++            return Instant.EPOCH;
++        }
++    }
++
++    private long tamanhoSeguro(final Path path) {
++        try {
++            return Files.size(path);
++        } catch (final IOException exception) {
++            return 0L;
++        }
++    }
++
++    private void deletarSilenciosamente(final Path path) {
++        try {
++            Files.deleteIfExists(path);
++        } catch (final IOException ignored) {
++            // A limpeza do cache é melhor esforço; falhas isoladas não devem interromper a leitura.
++        }
++    }
++
++    private static String hashCurto(final String valor) {
++        try {
++            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
++            final byte[] bytes = digest.digest(valor.getBytes(StandardCharsets.UTF_8));
++            return HexFormat.of().formatHex(bytes).substring(0, 16);
++        } catch (final NoSuchAlgorithmException exception) {
++            throw new IllegalStateException("SHA-256 indisponível.", exception);
++        }
++    }
++
++    private static String extensaoDaUri(final URI uri) {
++        final String path = uri.getPath() == null ? "" : uri.getPath().toLowerCase(Locale.ROOT);
++        final int dotIndex = path.lastIndexOf('.');
++        if (dotIndex < 0 || dotIndex == path.length() - 1) {
++            return ".img";
++        }
++        final String extensao = path.substring(dotIndex);
++        return switch (extensao) {
++            case ".jpg", ".jpeg", ".png", ".webp" -> extensao;
++            default -> ".img";
++        };
++    }
++}
+diff --git a/src/main/java/com/mango/service/PaginaInvalidaException.java b/src/main/java/com/mango/service/PaginaInvalidaException.java
+new file mode 100644
+index 0000000..68856fd
+--- /dev/null
++++ b/src/main/java/com/mango/service/PaginaInvalidaException.java
+@@ -0,0 +1,7 @@
++package com.mango.service;
++
++public final class PaginaInvalidaException extends LeituraException {
++    public PaginaInvalidaException(final int totalPaginas) {
++        super("Página inválida. Informe um número entre 1 e " + totalPaginas + ".");
++    }
++}
+diff --git a/src/main/java/com/mango/view/LeitorCapituloLauncher.java b/src/main/java/com/mango/view/LeitorCapituloLauncher.java
+new file mode 100644
+index 0000000..be4e306
+--- /dev/null
++++ b/src/main/java/com/mango/view/LeitorCapituloLauncher.java
+@@ -0,0 +1,64 @@
++package com.mango.view;
++
++import com.mango.config.LeituraModuleFactory;
++import com.mango.controller.LeitorCapituloController;
++import com.mango.model.ModoLeitura;
++
++import javafx.fxml.FXMLLoader;
++import javafx.scene.Parent;
++import javafx.scene.Scene;
++import javafx.stage.Stage;
++
++import java.io.IOException;
++import java.util.Objects;
++
++/**
++ * Ponto único para abrir o leitor de capítulos a partir de qualquer controller.
++ *
++ * Quando o UC1 estiver pronto, basta chamar:
++ * LeitorCapituloLauncher.abrir(capituloId);
++ */
++public final class LeitorCapituloLauncher {
++    private static final String FXML_LEITOR = "/fxml/leitor-capitulo.fxml";
++
++    private LeitorCapituloLauncher() {
++    }
++
++    public static void abrir(final String capituloId) {
++        abrir(capituloId, ModoLeitura.PAGINA_UNICA);
++    }
++
++    public static void abrir(final String capituloId, final ModoLeitura modoInicial) {
++        final Stage stage = new Stage();
++        abrirNoStage(stage, capituloId, modoInicial);
++    }
++
++    public static void abrirNoStage(
++            final Stage stage,
++            final String capituloId,
++            final ModoLeitura modoInicial
++    ) {
++        Objects.requireNonNull(stage, "stage");
++
++        try {
++            final FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(
++                    LeitorCapituloLauncher.class.getResource(FXML_LEITOR),
++                    "FXML do leitor não encontrado: " + FXML_LEITOR
++            ));
++
++            final Parent root = loader.load();
++            final LeitorCapituloController controller = loader.getController();
++            controller.setLeituraService(LeituraModuleFactory.criarPadrao());
++
++            stage.setTitle("Mango - Leitor de Capítulos");
++            stage.setScene(new Scene(root, 1200, 850));
++            stage.show();
++
++            if (capituloId != null && !capituloId.isBlank()) {
++                controller.abrirCapitulo(capituloId.strip(), modoInicial);
++            }
++        } catch (final IOException exception) {
++            throw new IllegalStateException("Não foi possível abrir o leitor de capítulos.", exception);
++        }
++    }
++}
+diff --git a/src/main/resources/css/leitor.css b/src/main/resources/css/leitor.css
+new file mode 100644
+index 0000000..e426f53
+--- /dev/null
++++ b/src/main/resources/css/leitor.css
+@@ -0,0 +1,32 @@
++.root {
++    -fx-font-family: "System";
++    -fx-background-color: #171717;
++}
++
++.reader-toolbar,
++.reader-statusbar {
++    -fx-background-color: #242424;
++}
++
++.reader-toolbar .label,
++.reader-statusbar .label {
++    -fx-text-fill: #f2f2f2;
++}
++
++.reader-progress {
++    -fx-font-weight: bold;
++}
++
++.reader-stage {
++    -fx-background-color: #111111;
++    -fx-padding: 18;
++}
++
++.single-page-container,
++.scroll-content {
++    -fx-alignment: center;
++}
++
++.button {
++    -fx-cursor: hand;
++}
+diff --git a/src/main/resources/fxml/leitor-capitulo.fxml b/src/main/resources/fxml/leitor-capitulo.fxml
+new file mode 100644
+index 0000000..6a18968
+--- /dev/null
++++ b/src/main/resources/fxml/leitor-capitulo.fxml
+@@ -0,0 +1,78 @@
++<?xml version="1.0" encoding="UTF-8"?>
++
++<?import javafx.geometry.Insets?>
++<?import javafx.scene.control.Button?>
++<?import javafx.scene.control.ComboBox?>
++<?import javafx.scene.control.Label?>
++<?import javafx.scene.control.ScrollPane?>
++<?import javafx.scene.control.Separator?>
++<?import javafx.scene.control.Slider?>
++<?import javafx.scene.control.TextField?>
++<?import javafx.scene.image.ImageView?>
++<?import javafx.scene.layout.BorderPane?>
++<?import javafx.scene.layout.HBox?>
++<?import javafx.scene.layout.StackPane?>
++<?import javafx.scene.layout.VBox?>
++
++<BorderPane fx:id="root"
++            xmlns="http://javafx.com/javafx/21"
++            xmlns:fx="http://javafx.com/fxml/1"
++            fx:controller="com.mango.controller.LeitorCapituloController"
++            stylesheets="@../css/leitor.css">
++    <top>
++        <HBox styleClass="reader-toolbar" spacing="10" alignment="CENTER_LEFT">
++            <padding>
++                <Insets top="8" right="12" bottom="8" left="12"/>
++            </padding>
++
++            <Label text="Capítulo ID:"/>
++            <TextField fx:id="chapterIdField" prefWidth="260" promptText="Cole o ID do capítulo MangaDex" onAction="#abrirCapituloInformado"/>
++            <Button text="Abrir" onAction="#abrirCapituloInformado"/>
++            <Separator orientation="VERTICAL"/>
++
++            <Button text="Anterior" onAction="#paginaAnterior"/>
++            <Button text="Próxima" onAction="#proximaPagina"/>
++            <Separator orientation="VERTICAL"/>
++
++            <Label text="Modo:"/>
++            <ComboBox fx:id="modoComboBox" prefWidth="160"/>
++
++            <Label text="Zoom:"/>
++            <Slider fx:id="zoomSlider" prefWidth="160" showTickLabels="true" showTickMarks="true" majorTickUnit="125"/>
++
++            <Label text="Ir para:"/>
++            <TextField fx:id="irParaField" prefWidth="70" onAction="#irParaPagina"/>
++
++            <Button fx:id="tentarNovamenteButton" text="Tentar novamente" onAction="#tentarNovamentePaginaAtual"/>
++            <Label fx:id="progressoLabel" text="Página 0 / 0" styleClass="reader-progress"/>
++        </HBox>
++    </top>
++
++    <center>
++        <StackPane styleClass="reader-stage">
++            <StackPane fx:id="paginaUnicaContainer" styleClass="single-page-container">
++                <ImageView fx:id="paginaUnicaImage" preserveRatio="true" smooth="true" fitWidth="900"/>
++            </StackPane>
++
++            <HBox fx:id="paginaDuplaContainer" spacing="16" alignment="CENTER" visible="false" managed="false">
++                <ImageView fx:id="paginaEsquerdaImage" preserveRatio="true" smooth="true" fitWidth="520"/>
++                <ImageView fx:id="paginaDireitaImage" preserveRatio="true" smooth="true" fitWidth="520"/>
++            </HBox>
++
++            <ScrollPane fx:id="scrollPane" fitToWidth="true" visible="false" managed="false">
++                <content>
++                    <VBox fx:id="scrollContent" alignment="TOP_CENTER" spacing="12" styleClass="scroll-content"/>
++                </content>
++            </ScrollPane>
++        </StackPane>
++    </center>
++
++    <bottom>
++        <HBox styleClass="reader-statusbar" alignment="CENTER_LEFT">
++            <padding>
++                <Insets top="6" right="12" bottom="6" left="12"/>
++            </padding>
++            <Label fx:id="statusLabel" text="Leitor pronto."/>
++        </HBox>
++    </bottom>
++</BorderPane>
+diff --git a/src/test/java/com/mango/service/LeituraServiceTest.java b/src/test/java/com/mango/service/LeituraServiceTest.java
+new file mode 100644
+index 0000000..8f5d2c7
+--- /dev/null
++++ b/src/test/java/com/mango/service/LeituraServiceTest.java
+@@ -0,0 +1,134 @@
++package com.mango.service;
++
++import com.mango.model.ModoLeitura;
++import com.mango.model.ProgressoLeitura;
++import com.mango.model.SessaoLeitura;
++import com.mango.repository.InMemoryProgressoLeituraRepository;
++
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.io.TempDir;
++
++import java.net.URI;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Path;
++import java.util.List;
++import java.util.Optional;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.CompletionException;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertInstanceOf;
++import static org.junit.jupiter.api.Assertions.assertThrows;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++class LeituraServiceTest {
++    @TempDir
++    Path tempDir;
++
++    private InMemoryProgressoLeituraRepository progressoRepository;
++
++    @BeforeEach
++    void setUp() {
++        progressoRepository = new InMemoryProgressoLeituraRepository();
++    }
++
++    @Test
++    void abrirCapituloSemPaginasRetornaErro() {
++        final LeituraService service = criarService(List.of());
++
++        final CompletionException exception = assertThrows(
++                CompletionException.class,
++                () -> service.abrirCapitulo("capitulo-sem-paginas", ModoLeitura.PAGINA_UNICA).join()
++        );
++
++        assertInstanceOf(CapituloSemPaginasException.class, exception.getCause());
++    }
++
++    @Test
++    void navegarParaProximaPaginaRegistraProgressoContinuo() {
++        final LeituraService service = criarService(paginas(3));
++        final SessaoLeitura sessao = service.abrirCapitulo("capitulo-1", ModoLeitura.PAGINA_UNICA).join();
++
++        service.proximaPagina(sessao).join();
++
++        final Optional<ProgressoLeitura> progresso = progressoRepository.buscarPorCapitulo("capitulo-1");
++        assertTrue(progresso.isPresent());
++        assertEquals(2, progresso.get().paginaAtual());
++        assertEquals(3, progresso.get().totalPaginas());
++        assertEquals(false, progresso.get().concluido());
++    }
++
++    @Test
++    void chegarNaUltimaPaginaMarcaCapituloComoLido() {
++        final LeituraService service = criarService(paginas(2));
++        final SessaoLeitura sessao = service.abrirCapitulo("capitulo-2", ModoLeitura.PAGINA_UNICA).join();
++
++        service.proximaPagina(sessao).join();
++
++        final ProgressoLeitura progresso = progressoRepository.buscarPorCapitulo("capitulo-2").orElseThrow();
++        assertEquals(2, progresso.paginaAtual());
++        assertTrue(progresso.concluido());
++    }
++
++    @Test
++    void irParaPaginaForaDoIntervaloBloqueiaOperacao() {
++        final LeituraService service = criarService(paginas(4));
++        final SessaoLeitura sessao = service.abrirCapitulo("capitulo-3", ModoLeitura.PAGINA_UNICA).join();
++
++        final PaginaInvalidaException exception = assertThrows(
++                PaginaInvalidaException.class,
++                () -> service.irParaPagina(sessao, 99)
++        );
++
++        assertEquals("Página inválida. Informe um número entre 1 e 4.", exception.getMessage());
++    }
++
++    @Test
++    void zoomRespeitaLimitesDaRegraDeNegocio() {
++        final LeituraService service = criarService(paginas(1));
++        final SessaoLeitura sessao = service.abrirCapitulo("capitulo-4", ModoLeitura.PAGINA_UNICA).join();
++
++        assertEquals(0.25, service.alterarZoom(sessao, 0.01));
++        assertEquals(4.00, service.alterarZoom(sessao, 9.00));
++        assertEquals(1.50, service.alterarZoom(sessao, 1.50));
++    }
++
++    @Test
++    void idiomaCoreanoUsaScrollVerticalComoModoPadrao() {
++        final LeituraService service = criarService(paginas(1));
++
++        assertEquals(ModoLeitura.SCROLL_VERTICAL, service.modoPadraoPorOrigem("ko"));
++        assertEquals(ModoLeitura.PAGINA_UNICA, service.modoPadraoPorOrigem("ja"));
++    }
++
++    private LeituraService criarService(final List<URI> paginas) {
++        final ChapterPageProvider provider = new FakeChapterPageProvider(paginas);
++        final PageCacheService cacheService = new PageCacheService(tempDir.resolve("cache"), provider);
++        return new LeituraService(provider, cacheService, progressoRepository);
++    }
++
++    private static List<URI> paginas(final int total) {
++        return java.util.stream.IntStream.rangeClosed(1, total)
++                .mapToObj(numero -> URI.create("https://mango.test/page-" + numero + ".jpg"))
++                .toList();
++    }
++
++    private static final class FakeChapterPageProvider implements ChapterPageProvider {
++        private final List<URI> paginas;
++
++        private FakeChapterPageProvider(final List<URI> paginas) {
++            this.paginas = paginas;
++        }
++
++        @Override
++        public CompletableFuture<List<URI>> listarUrlsPaginas(final String capituloId) {
++            return CompletableFuture.completedFuture(paginas);
++        }
++
++        @Override
++        public CompletableFuture<byte[]> baixarPagina(final URI paginaUri) {
++            return CompletableFuture.completedFuture(("fake image: " + paginaUri).getBytes(StandardCharsets.UTF_8));
++        }
++    }
++}
