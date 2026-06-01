@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.mango.controller.CatalogoController"
+            styleClass="catalogo-root">
+
+    <top>
+        <HBox spacing="10" styleClass="barra-superior">
+            <Label text="Mango" styleClass="logo"/>
+            <TextField fx:id="campoBusca" promptText="Buscar mangá por título..." HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnBuscar" text="Buscar" onAction="#onBuscar" defaultButton="true"/>
+            <ProgressIndicator fx:id="progresso" prefWidth="28" prefHeight="28"/>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="area-resultados">
+            <content>
+                <FlowPane fx:id="painelResultados" hgap="16" vgap="16" styleClass="grade"/>
+            </content>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="barra-inferior">
+            <Button fx:id="btnAnterior" text="◀ Anterior" onAction="#onAnterior"/>
+            <Label fx:id="lblPagina"/>
+            <Button fx:id="btnProxima" text="Próxima ▶" onAction="#onProxima"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblStatus" styleClass="status"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
