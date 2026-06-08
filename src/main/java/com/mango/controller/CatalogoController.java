@@ -22,10 +22,17 @@ import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * Controller da tela de catálogo (UC1). Converte eventos da UI em chamadas ao
  * {@link MangaDexService}, executadas em background para manter a interface
  * responsiva, e renderiza os resultados em uma grade de cards.
+ *
+ * <p>Buscas concorrentes são protegidas por um contador de geração: respostas de
+ * buscas superadas (ex.: o Leitor digitou de novo antes da anterior terminar)
+ * são descartadas, evitando que um resultado antigo sobrescreva o atual.</p>
  */
 public class CatalogoController {
 
@@ -41,8 +48,16 @@ public class CatalogoController {
     @FXML private Label lblPagina;
 
     private final MangaDexService service = new MangaDexService();
+    private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
+        final Thread t = new Thread(r, "busca-catalogo");
+        t.setDaemon(true);
+        return t;
+    });
+
     private FiltroBusca filtroAtual = FiltroBusca.porTitulo("");
     private ResultadoBusca ultimoResultado;
+    /** Geração da busca mais recente; respostas com geração anterior são ignoradas. */
+    private long geracaoBusca;
 
     @FXML
     public void initialize() {
@@ -78,6 +93,7 @@ public class CatalogoController {
 
     private void executarBusca(final FiltroBusca filtro) {
         filtroAtual = filtro;
+        final long geracao = ++geracaoBusca;
         definirCarregando(true);
 
         final Task<ResultadoBusca> task = new Task<>() {
@@ -88,10 +104,16 @@ public class CatalogoController {
         };
 
         task.setOnSucceeded(e -> {
+            if (geracao != geracaoBusca) {
+                return;   // resultado obsoleto: uma busca mais nova já assumiu
+            }
             definirCarregando(false);
             renderizar(task.getValue());
         });
         task.setOnFailed(e -> {
+            if (geracao != geracaoBusca) {
+                return;
+            }
             definirCarregando(false);
             final Throwable causa = task.getException();
             final String msg = (causa instanceof RegraNegocioException)
@@ -101,9 +123,7 @@ public class CatalogoController {
             log.warn("Busca falhou: {}", msg);
         });
 
-        final Thread t = new Thread(task, "busca-catalogo");
-        t.setDaemon(true);
-        t.start();
+        executor.submit(task);
     }
 
     private void renderizar(final ResultadoBusca resultado) {
@@ -133,7 +153,16 @@ public class CatalogoController {
         capa.setPreserveRatio(true);
         if (manga.capaUrl() != null) {
             // true = carregamento em background; não bloqueia a UI thread.
-            capa.setImage(new Image(manga.capaUrl(), 160, 230, true, true, true));
+            final Image img = new Image(manga.capaUrl(), 160, 230, true, true, true);
+            img.errorProperty().addListener((obs, antes, erro) -> {
+                if (Boolean.TRUE.equals(erro)) {
+                    capa.setImage(null);
+                    capa.getStyleClass().add("capa-erro");   // mostra placeholder estilizado
+                }
+            });
+            capa.setImage(img);
+        } else {
+            capa.getStyleClass().add("capa-erro");
         }
 
         final Label titulo = new Label(manga.titulo());

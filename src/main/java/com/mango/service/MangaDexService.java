@@ -17,7 +17,9 @@ import org.slf4j.LoggerFactory;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -26,11 +28,16 @@ import java.util.Optional;
  *
  * <p>Regras de negócio implementadas: RN1.1 (termo mínimo), RN1.2 (cache 30 min),
  * RN1.3 (paginação de 20), RN1.4/1.5 (delegadas ao {@link HttpJsonClient}),
- * RN1.6 (idioma preferido pt-br com fallback en para capítulos).</p>
+ * RN1.6 (idioma preferido pt-br com fallback en, com deduplicação de capítulos).
+ * Os fluxos EX1/EX2 degradam para o cache expirado quando a API está fora.</p>
  */
 public final class MangaDexService {
 
     private static final Logger log = LoggerFactory.getLogger(MangaDexService.class);
+
+    /** Limite prático de offset da API do MangaDex. */
+    private static final int OFFSET_MAXIMO = 10_000;
+    private static final int LIMITE_FEED = 100;
 
     private final HttpJsonClient http;
     private final CacheBuscaRepository cache;
@@ -38,6 +45,7 @@ public final class MangaDexService {
 
     public MangaDexService() {
         this(new HttpJsonClient(), new CacheBuscaRepository());
+        cache.removerExpirados();   // higiene do cache no start (não roda em testes com mock)
     }
 
     /** Construtor para injeção de dependências (facilita testes com Mockito). */
@@ -51,8 +59,11 @@ public final class MangaDexService {
     /**
      * Busca mangás no catálogo conforme os filtros (fluxo principal do UC1).
      *
+     * <p>Se a API falhar (EX1/EX2) e houver um resultado em cache — mesmo expirado —
+     * ele é servido como degradação graciosa, marcado como {@code doCache}.</p>
+     *
      * @throws RegraNegocioException se o termo violar a RN1.1
-     * @throws MangaDexException     em falha de comunicação com a API
+     * @throws MangaDexException     em falha de comunicação sem cache disponível
      */
     public ResultadoBusca buscar(final FiltroBusca filtro) {
         validarTermo(filtro.termo());
@@ -69,9 +80,23 @@ public final class MangaDexService {
         }
 
         final String url = montarUrlBusca(filtro);
-        final JsonNode root = http.getJson(url);
-        cache.salvar(chave, root.toString());
-        return parseResultado(root, filtro.pagina(), false);
+        try {
+            final JsonNode root = http.getJson(url);
+            cache.salvar(chave, root.toString());
+            return parseResultado(root, filtro.pagina(), false);
+        } catch (final MangaDexException e) {
+            // EX1/EX2: tenta o cache expirado antes de propagar o erro.
+            final Optional<String> stale = cache.buscarIgnorandoValidade(chave);
+            if (stale.isPresent()) {
+                try {
+                    log.warn("API indisponível; servindo cache antigo. Causa: {}", e.getMessage());
+                    return parseResultado(mapper.readTree(stale.get()), filtro.pagina(), true);
+                } catch (final Exception ignored) {
+                    // cache ilegível: cai no throw abaixo
+                }
+            }
+            throw e;
+        }
     }
 
     private void validarTermo(final String termo) {
@@ -115,22 +140,48 @@ public final class MangaDexService {
         return parseManga(data);
     }
 
-    /** Lista os capítulos de um mangá no idioma preferido, com fallback (RN1.6). */
+    /**
+     * Lista os capítulos de um mangá no idioma preferido com fallback (RN1.6).
+     *
+     * <p>Pagina o feed completo (acima de 100 capítulos) e deduplica por número:
+     * quando o mesmo capítulo existe em pt-br e en (ou em vários grupos), mantém
+     * uma única entrada, preferindo pt-br. Oneshots sem número não são colapsados.</p>
+     */
     public List<Capitulo> listarCapitulos(final String mangaId) {
-        final String url = AppConfig.API_BASE + "/manga/" + mangaId + "/feed"
-                + "?limit=100&order[chapter]=asc&order[volume]=asc"
-                + "&translatedLanguage[]=" + AppConfig.IDIOMA_PREFERIDO
-                + "&translatedLanguage[]=" + AppConfig.IDIOMA_FALLBACK
-                + "&contentRating[]=safe&contentRating[]=suggestive";
-        final JsonNode root = http.getJson(url);
-        final List<Capitulo> capitulos = new ArrayList<>();
-        final JsonNode data = root.get("data");
-        if (data != null && data.isArray()) {
-            for (final JsonNode node : data) {
-                capitulos.add(parseCapitulo(node, mangaId));
+        final Map<String, Capitulo> porChave = new LinkedHashMap<>();
+        int offset = 0;
+        int total = Integer.MAX_VALUE;
+
+        while (offset < total && offset < OFFSET_MAXIMO) {
+            final String url = AppConfig.API_BASE + "/manga/" + mangaId + "/feed"
+                    + "?limit=" + LIMITE_FEED + "&offset=" + offset
+                    + "&order[volume]=asc&order[chapter]=asc"
+                    + "&translatedLanguage[]=" + AppConfig.IDIOMA_PREFERIDO
+                    + "&translatedLanguage[]=" + AppConfig.IDIOMA_FALLBACK
+                    + "&contentRating[]=safe&contentRating[]=suggestive";
+
+            final JsonNode root = http.getJson(url);
+            total = root.path("total").asInt(0);
+            final JsonNode data = root.path("data");
+            if (!data.isArray() || data.isEmpty()) {
+                break;
             }
+            for (final JsonNode node : data) {
+                final Capitulo c = parseCapitulo(node, mangaId);
+                final String chave = (c.numero() == null || c.numero().isBlank())
+                        ? "id:" + c.id()
+                        : "num:" + c.numero();
+                final Capitulo existente = porChave.get(chave);
+                if (existente == null) {
+                    porChave.put(chave, c);
+                } else if (AppConfig.IDIOMA_PREFERIDO.equals(c.idioma())
+                        && !AppConfig.IDIOMA_PREFERIDO.equals(existente.idioma())) {
+                    porChave.put(chave, c);   // RN1.6: pt-br tem prioridade sobre o fallback
+                }
+            }
+            offset += LIMITE_FEED;
         }
-        return capitulos;
+        return new ArrayList<>(porChave.values());
     }
 
     // ------------------------------------------------------------ parsing JSON

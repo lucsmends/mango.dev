@@ -60,6 +60,16 @@
     -fx-font-size: 11px;
 }
 
+/* Placeholder quando a capa não carrega */
+.capa-erro {
+    -fx-min-width: 160;
+    -fx-min-height: 230;
+    -fx-background-color: #3a3d4a;
+    -fx-background-radius: 4;
+    -fx-border-color: #4a4d5a;
+    -fx-border-radius: 4;
+}
+
 /* Ficha */
 .ficha-conteudo {
     -fx-padding: 22;
