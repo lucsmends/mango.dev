@@ -6,11 +6,13 @@ import com.mango.exception.MangaDexException;
 import com.mango.exception.RegraNegocioException;
 import com.mango.model.Capitulo;
 import com.mango.model.FiltroBusca;
+import com.mango.model.Genero;
 import com.mango.model.ResultadoBusca;
 import com.mango.repository.CacheBuscaRepository;
 import com.mango.util.HttpJsonClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -122,6 +124,28 @@ class MangaDexServiceTest {
         assertEquals("pt-br", cap1.idioma());          // RN1.6
     }
 
+    @Test
+    void listarGenerosRetornaApenasGrupoGenre() throws Exception {
+        when(http.getJson(anyString())).thenReturn(tagsJson());
+
+        final List<Genero> generos = service().listarGeneros();
+
+        assertEquals(1, generos.size());               // só o grupo "genre"
+        assertEquals("Action", generos.get(0).nome());
+    }
+
+    @Test
+    void buscaComGeneroIncluiIncludedTags() throws Exception {
+        when(cache.buscar(anyString())).thenReturn(Optional.empty());
+        when(http.getJson(anyString())).thenReturn(umMangaJson());
+
+        service().buscar(new FiltroBusca("naruto", List.of("tag-action"), "", 0));
+
+        final ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
+        verify(http).getJson(url.capture());
+        assertTrue(url.getValue().contains("includedTags[]=tag-action"));   // MNG-32
+    }
+
     // ------------------------------------------------------------- fixtures
 
     private JsonNode umMangaJson() throws Exception {
@@ -143,27 +167,4 @@ class MangaDexServiceTest {
                       },
                       "relationships": [
                         { "type": "author", "attributes": { "name": "Kishimoto" } },
-                        { "type": "cover_art", "attributes": { "fileName": "cover.jpg" } }
-                      ]
-                    }
-                  ]
-                }
-                """;
-        return MAPPER.readTree(json);
-    }
-
-    private JsonNode feedComDuplicatas() throws Exception {
-        final String json = """
-                {
-                  "result": "ok",
-                  "total": 3,
-                  "data": [
-                    { "id": "c1-en",  "attributes": { "chapter": "1", "title": "A", "translatedLanguage": "en",    "pages": 10 } },
-                    { "id": "c1-ptbr","attributes": { "chapter": "1", "title": "A", "translatedLanguage": "pt-br", "pages": 10 } },
-                    { "id": "c2-en",  "attributes": { "chapter": "2", "title": "B", "translatedLanguage": "en",    "pages": 12 } }
-                  ]
-                }
-                """;
-        return MAPPER.readTree(json);
-    }
-}
+               

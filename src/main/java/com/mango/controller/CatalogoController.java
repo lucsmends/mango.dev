@@ -2,6 +2,7 @@ package com.mango.controller;
 
 import com.mango.exception.RegraNegocioException;
 import com.mango.model.FiltroBusca;
+import com.mango.model.Genero;
 import com.mango.model.Manga;
 import com.mango.model.ResultadoBusca;
 import com.mango.service.MangaDexService;
@@ -11,7 +12,10 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -22,6 +26,8 @@ import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,6 +45,7 @@ public class CatalogoController {
     private static final Logger log = LoggerFactory.getLogger(CatalogoController.class);
 
     @FXML private TextField campoBusca;
+    @FXML private MenuButton menuGeneros;
     @FXML private Button btnBuscar;
     @FXML private FlowPane painelResultados;
     @FXML private ProgressIndicator progresso;
@@ -69,12 +76,51 @@ public class CatalogoController {
             }
         });
         lblStatus.setText("Digite um título e pressione Enter, ou busque sem termo para ver os populares.");
+        carregarGeneros();
     }
 
     @FXML
     private void onBuscar() {
-        filtroAtual = FiltroBusca.porTitulo(campoBusca.getText());
-        executarBusca(filtroAtual.naPagina(0));
+        filtroAtual = new FiltroBusca(campoBusca.getText(), generosSelecionados(), "", 0);
+        executarBusca(filtroAtual);
+    }
+
+    /** Carrega os gêneros do MangaDex em background e popula o menu (MNG-32). */
+    private void carregarGeneros() {
+        final Task<List<Genero>> task = new Task<>() {
+            @Override
+            protected List<Genero> call() {
+                return service.listarGeneros();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            for (final Genero g : task.getValue()) {
+                final CheckMenuItem item = new CheckMenuItem(g.nome());
+                item.setUserData(g.id());
+                item.selectedProperty().addListener((o, a, b) -> atualizarRotuloGeneros());
+                menuGeneros.getItems().add(item);
+            }
+        });
+        task.setOnFailed(e ->
+                log.warn("Não foi possível carregar os gêneros: {}",
+                        task.getException() != null ? task.getException().getMessage() : "erro"));
+        executor.submit(task);
+    }
+
+    /** IDs (UUIDs) dos gêneros marcados no menu. */
+    private List<String> generosSelecionados() {
+        final List<String> ids = new ArrayList<>();
+        for (final MenuItem item : menuGeneros.getItems()) {
+            if (item instanceof CheckMenuItem c && c.isSelected()) {
+                ids.add((String) c.getUserData());
+            }
+        }
+        return ids;
+    }
+
+    private void atualizarRotuloGeneros() {
+        final int n = generosSelecionados().size();
+        menuGeneros.setText(n == 0 ? "Gêneros" : "Gêneros (" + n + ")");
     }
 
     @FXML
@@ -171,47 +217,4 @@ public class CatalogoController {
         titulo.setMaxWidth(160);
 
         final Label status = new Label(manga.status());
-        status.getStyleClass().add("card-status");
-
-        final VBox card = new VBox(6, capa, titulo, status);
-        card.getStyleClass().add("card");
-        card.setAlignment(Pos.TOP_CENTER);
-        card.setPrefWidth(184);
-        card.setOnMouseClicked(e -> abrirFicha(manga));
-        return card;
-    }
-
-    private void abrirFicha(final Manga manga) {
-        try {
-            final Parent catalogoRoot = campoBusca.getScene().getRoot();
-            final javafx.fxml.FXMLLoader loader =
-                    new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/ficha.fxml"));
-            final Parent fichaRoot = loader.load();
-            final FichaController controller = loader.getController();
-            controller.carregar(service, manga, catalogoRoot);
-            campoBusca.getScene().setRoot(fichaRoot);
-        } catch (final Exception ex) {
-            log.error("Falha ao abrir a ficha do mangá {}", manga.id(), ex);
-            lblStatus.setText("Não foi possível abrir a ficha deste mangá.");
-        }
-    }
-
-    private void atualizarPaginacao(final ResultadoBusca resultado) {
-        final boolean temAnterior = resultado != null && resultado.temAnterior();
-        final boolean temProxima = resultado != null && resultado.temProxima();
-        btnAnterior.setDisable(!temAnterior);
-        btnProxima.setDisable(!temProxima);
-        lblPagina.setText(resultado == null ? ""
-                : "Página " + (resultado.pagina() + 1) + "/" + resultado.totalPaginas());
-    }
-
-    private void definirCarregando(final boolean carregando) {
-        Platform.runLater(() -> {
-            progresso.setVisible(carregando);
-            btnBuscar.setDisable(carregando);
-            if (carregando) {
-                lblStatus.setText("Buscando...");
-            }
-        });
-    }
-}
+        status.getStyleClass().add("card-status

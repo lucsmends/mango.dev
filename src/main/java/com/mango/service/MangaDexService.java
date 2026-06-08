@@ -6,6 +6,7 @@ import com.mango.exception.MangaDexException;
 import com.mango.exception.RegraNegocioException;
 import com.mango.model.Capitulo;
 import com.mango.model.FiltroBusca;
+import com.mango.model.Genero;
 import com.mango.model.Manga;
 import com.mango.model.ResultadoBusca;
 import com.mango.repository.CacheBuscaRepository;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,9 @@ public final class MangaDexService {
     private final HttpJsonClient http;
     private final CacheBuscaRepository cache;
     private final ObjectMapper mapper = new ObjectMapper();
+
+    /** Lista de gêneros memoizada (as tags do MangaDex são estáticas). */
+    private List<Genero> generosCache;
 
     public MangaDexService() {
         this(new HttpJsonClient(), new CacheBuscaRepository());
@@ -121,9 +126,39 @@ public final class MangaDexService {
             url.append("&title=").append(encode(filtro.termo()))
                .append("&order[relevance]=desc");
         }
-        // NOTA (MNG-32): filtros de gênero/autor exigem resolver tag-ids via
-        // GET /manga/tag e author-ids via GET /author. Próximo passo do UC1.
+        // MNG-32: filtro por gênero. generos() carrega os UUIDs das tags selecionadas.
+        if (!filtro.generos().isEmpty()) {
+            for (final String tagId : filtro.generos()) {
+                url.append("&includedTags[]=").append(tagId);
+            }
+            url.append("&includedTagsMode=AND");
+        }
         return url.toString();
+    }
+
+    /**
+     * Lista os gêneros disponíveis no MangaDex (tags do grupo "genre"), para
+     * alimentar o filtro de busca (MNG-32). O resultado é memoizado, pois as
+     * tags do MangaDex são essencialmente estáticas.
+     */
+    public List<Genero> listarGeneros() {
+        if (generosCache != null) {
+            return generosCache;
+        }
+        final JsonNode root = http.getJson(AppConfig.API_BASE + "/manga/tag");
+        final List<Genero> generos = new ArrayList<>();
+        for (final JsonNode node : root.path("data")) {
+            final JsonNode attr = node.path("attributes");
+            if ("genre".equals(attr.path("group").asText())) {
+                final String nome = escolherLocalizado(attr.path("name"), null, "");
+                if (!nome.isBlank()) {
+                    generos.add(new Genero(node.path("id").asText(), nome));
+                }
+            }
+        }
+        generos.sort(Comparator.comparing(Genero::nome, String.CASE_INSENSITIVE_ORDER));
+        generosCache = List.copyOf(generos);
+        return generosCache;
     }
 
     // ------------------------------------------------------------------ ficha
@@ -241,41 +276,4 @@ public final class MangaDexService {
         final String numero = attr.path("chapter").asText("");
         final String titulo = attr.path("title").asText("");
         final String idioma = attr.path("translatedLanguage").asText("");
-        final int paginas = attr.path("pages").asInt(0);
-        return new Capitulo(id, mangaId, numero, titulo, idioma, paginas);
-    }
-
-    /**
-     * Escolhe um texto localizado de um objeto {@code {"pt-br": "...", "en": "..."}},
-     * preferindo pt-br, depois en, depois o primeiro disponível. Consulta também
-     * uma lista de altTitles, quando fornecida.
-     */
-    private String escolherLocalizado(final JsonNode mapa, final JsonNode altTitles, final String padrao) {
-        if (mapa != null && mapa.isObject()) {
-            if (mapa.has(AppConfig.IDIOMA_PREFERIDO)) {
-                return mapa.get(AppConfig.IDIOMA_PREFERIDO).asText();
-            }
-            if (mapa.has(AppConfig.IDIOMA_FALLBACK)) {
-                return mapa.get(AppConfig.IDIOMA_FALLBACK).asText();
-            }
-        }
-        if (altTitles != null && altTitles.isArray()) {
-            for (final JsonNode alt : altTitles) {
-                if (alt.has(AppConfig.IDIOMA_PREFERIDO)) {
-                    return alt.get(AppConfig.IDIOMA_PREFERIDO).asText();
-                }
-            }
-        }
-        if (mapa != null && mapa.isObject()) {
-            final var nomes = mapa.fieldNames();
-            if (nomes.hasNext()) {
-                return mapa.get(nomes.next()).asText();
-            }
-        }
-        return padrao;
-    }
-
-    private static String encode(final String valor) {
-        return URLEncoder.encode(valor, StandardCharsets.UTF_8);
-    }
-}
+        final int paginas = attr.path("pages"
