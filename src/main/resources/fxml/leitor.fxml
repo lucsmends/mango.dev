@@ -34,4 +34,11 @@
         </ScrollPane>
     </center>
 
+    <bottom>
+        <HBox spacing="24" alignment="CENTER" styleClass="leitor-controles">
+            <Button fx:id="btnPagAnterior" text="◀ Anterior" onAction="#onPaginaAnterior"/>
+            <Button fx:id="btnPagProxima" text="Proxima ▶" onAction="#onPaginaProxima"/>
+        </HBox>
+    </bottom>
+
 </BorderPane>

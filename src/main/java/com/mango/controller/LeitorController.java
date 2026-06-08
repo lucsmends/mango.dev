@@ -9,12 +9,14 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +31,10 @@ import java.util.concurrent.Executors;
 /**
  * Controller do leitor de capitulos (UC2) - modo de pagina unica.
  *
- * Cobre: carregamento das paginas, navegacao por teclado e mouse, zoom (RN2.6),
- * pre-carga das proximas paginas (RN2.1), persistencia de progresso (RN2.2),
- * marcacao de concluido (RN2.3) e retomada do ultimo ponto lido (FA5).
+ * A pagina fica centralizada na area de leitura. A navegacao acontece por
+ * botoes (Anterior/Proxima), teclado (setas, espaco, PgUp/PgDn, Home/End) e
+ * mouse. Cobre zoom (RN2.6), pre-carga (RN2.1), progresso (RN2.2), concluido
+ * (RN2.3) e retomada (FA5).
  */
 public class LeitorController {
 
@@ -47,7 +50,10 @@ public class LeitorController {
     @FXML private Label lblInfo;
     @FXML private Label lblZoom;
     @FXML private ScrollPane scroll;
+    @FXML private StackPane painel;
     @FXML private ImageView imgPagina;
+    @FXML private Button btnPagAnterior;
+    @FXML private Button btnPagProxima;
 
     private LeituraService service;
     private Manga manga;
@@ -64,6 +70,14 @@ public class LeitorController {
         return t;
     });
 
+    @FXML
+    public void initialize() {
+        // Mantem o painel sempre com, no minimo, o tamanho da area visivel,
+        // de modo que a pagina fique centralizada (e role quando ampliada).
+        scroll.viewportBoundsProperty().addListener((obs, ant, nv) ->
+                painel.setMinSize(nv.getWidth(), nv.getHeight()));
+    }
+
     /** Abre o leitor para um capitulo. */
     public void carregar(final LeituraService service, final Manga manga,
                          final Capitulo capitulo, final Parent fichaRoot) {
@@ -74,6 +88,7 @@ public class LeitorController {
 
         lblTitulo.setText(manga.titulo() + "  -  " + capitulo.rotulo());
         aplicarZoom();
+        atualizarBotoes();
         raiz.setOnKeyPressed(this::onKey);
         raiz.setFocusTraversable(true);
         Platform.runLater(raiz::requestFocus);
@@ -109,7 +124,9 @@ public class LeitorController {
         indice = Math.max(0, Math.min(novoIndice, paginas.size() - 1));
         imgPagina.setImage(imagem(indice));
         scroll.setVvalue(0);
+        scroll.setHvalue(0.5);
         atualizarInfo();
+        atualizarBotoes();
         precarregar();                                               // RN2.1
         service.registrarProgresso(manga.id(), capitulo.id(), indice, paginas.size()); // RN2.2/RN2.3
     }
@@ -134,6 +151,16 @@ public class LeitorController {
         if (indice > 0) {
             mostrar(indice - 1);
         }
+    }
+
+    @FXML
+    private void onPaginaAnterior() {
+        anterior();
+    }
+
+    @FXML
+    private void onPaginaProxima() {
+        proxima();
     }
 
     private void onKey(final KeyEvent e) {
@@ -186,6 +213,12 @@ public class LeitorController {
 
     private void atualizarInfo() {
         lblInfo.setText("Pagina " + (indice + 1) + " de " + paginas.size());
+    }
+
+    private void atualizarBotoes() {
+        final boolean vazio = paginas.isEmpty();
+        btnPagAnterior.setDisable(vazio || indice == 0);
+        btnPagProxima.setDisable(vazio || indice >= paginas.size() - 1);
     }
 
     @FXML

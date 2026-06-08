@@ -125,3 +125,8 @@
 .leitor-painel {
     -fx-padding: 10;
 }
+
+.leitor-controles {
+    -fx-padding: 12;
+    -fx-background-color: #1f2129;
+}
