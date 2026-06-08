@@ -28,13 +28,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Testes unitários do {@link MangaDexService}, cobrindo as RNs do UC1 com
- * o cliente HTTP e o cache mockados (sem rede nem banco).
- *
- * <p>Rastreabilidade: RN1.1 (termo mínimo), RN1.2/FA2 (cache), RN1.3 (paginação),
- * RN1.6 (dedupe por idioma), EX2 (fallback de cache), EX4 (resultado vazio).</p>
- */
 @ExtendWith(MockitoExtension.class)
 class MangaDexServiceTest {
 
@@ -75,23 +68,22 @@ class MangaDexServiceTest {
 
         final ResultadoBusca r = service().buscar(FiltroBusca.porTitulo("naruto"));
 
-        assertTrue(r.doCache());                       // FA2
+        assertTrue(r.doCache());
         verify(http, never()).getJson(anyString());
     }
 
     @Test
     void paginacaoCalculaTotalDePaginas() {
         final ResultadoBusca r = new ResultadoBusca(List.of(), 0, 45, 20, false);
-        assertEquals(3, r.totalPaginas());             // RN1.3
+        assertEquals(3, r.totalPaginas());
         assertTrue(r.temProxima());
         assertFalse(r.temAnterior());
     }
 
     @Test
     void apiForaServeCacheExpirado() throws Exception {
-        // EX2: API falha, mas há um resultado antigo em cache -> degradação graciosa.
         when(cache.buscar(anyString())).thenReturn(Optional.empty());
-        when(http.getJson(anyString())).thenThrow(new MangaDexException("indisponível"));
+        when(http.getJson(anyString())).thenThrow(new MangaDexException("indisponivel"));
         when(cache.buscarIgnorandoValidade(anyString()))
                 .thenReturn(Optional.of(umMangaJson().toString()));
 
@@ -104,7 +96,7 @@ class MangaDexServiceTest {
     @Test
     void semCacheApiForaPropagaErro() {
         when(cache.buscar(anyString())).thenReturn(Optional.empty());
-        when(http.getJson(anyString())).thenThrow(new MangaDexException("indisponível"));
+        when(http.getJson(anyString())).thenThrow(new MangaDexException("indisponivel"));
         when(cache.buscarIgnorandoValidade(anyString())).thenReturn(Optional.empty());
 
         assertThrows(MangaDexException.class,
@@ -117,11 +109,10 @@ class MangaDexServiceTest {
 
         final List<Capitulo> capitulos = service().listarCapitulos("abc-123");
 
-        // Capítulo "1" existe em en e pt-br -> deve sobrar 1 (pt-br); "2" só em en.
         assertEquals(2, capitulos.size());
         final Capitulo cap1 = capitulos.stream()
                 .filter(c -> "1".equals(c.numero())).findFirst().orElseThrow();
-        assertEquals("pt-br", cap1.idioma());          // RN1.6
+        assertEquals("pt-br", cap1.idioma());
     }
 
     @Test
@@ -130,7 +121,7 @@ class MangaDexServiceTest {
 
         final List<Genero> generos = service().listarGeneros();
 
-        assertEquals(1, generos.size());               // só o grupo "genre"
+        assertEquals(1, generos.size());
         assertEquals("Action", generos.get(0).nome());
     }
 
@@ -143,10 +134,8 @@ class MangaDexServiceTest {
 
         final ArgumentCaptor<String> url = ArgumentCaptor.forClass(String.class);
         verify(http).getJson(url.capture());
-        assertTrue(url.getValue().contains("includedTags[]=tag-action"));   // MNG-32
+        assertTrue(url.getValue().contains("includedTags[]=tag-action"));
     }
-
-    // ------------------------------------------------------------- fixtures
 
     private JsonNode umMangaJson() throws Exception {
         final String json = """
@@ -167,4 +156,40 @@ class MangaDexServiceTest {
                       },
                       "relationships": [
                         { "type": "author", "attributes": { "name": "Kishimoto" } },
-               
+                        { "type": "cover_art", "attributes": { "fileName": "cover.jpg" } }
+                      ]
+                    }
+                  ]
+                }
+                """;
+        return MAPPER.readTree(json);
+    }
+
+    private JsonNode tagsJson() throws Exception {
+        final String json = """
+                {
+                  "result": "ok",
+                  "data": [
+                    { "id": "tag-action", "attributes": { "group": "genre", "name": { "en": "Action" } } },
+                    { "id": "tag-school", "attributes": { "group": "theme", "name": { "en": "School Life" } } }
+                  ]
+                }
+                """;
+        return MAPPER.readTree(json);
+    }
+
+    private JsonNode feedComDuplicatas() throws Exception {
+        final String json = """
+                {
+                  "result": "ok",
+                  "total": 3,
+                  "data": [
+                    { "id": "c1-en",  "attributes": { "chapter": "1", "title": "A", "translatedLanguage": "en",    "pages": 10 } },
+                    { "id": "c1-ptbr","attributes": { "chapter": "1", "title": "A", "translatedLanguage": "pt-br", "pages": 10 } },
+                    { "id": "c2-en",  "attributes": { "chapter": "2", "title": "B", "translatedLanguage": "en",    "pages": 12 } }
+                  ]
+                }
+                """;
+        return MAPPER.readTree(json);
+    }
+}

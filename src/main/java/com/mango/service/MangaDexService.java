@@ -25,19 +25,17 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Serviço de catálogo do UC1 — orquestra a API do MangaDex, o cache local e o
- * mapeamento de JSON para o domínio.
+ * Servico de catalogo do UC1 - orquestra a API do MangaDex, o cache local e o
+ * mapeamento de JSON para o dominio.
  *
- * <p>Regras de negócio implementadas: RN1.1 (termo mínimo), RN1.2 (cache 30 min),
- * RN1.3 (paginação de 20), RN1.4/1.5 (delegadas ao {@link HttpJsonClient}),
- * RN1.6 (idioma preferido pt-br com fallback en, com deduplicação de capítulos).
- * Os fluxos EX1/EX2 degradam para o cache expirado quando a API está fora.</p>
+ * Regras de negocio: RN1.1 (termo minimo), RN1.2 (cache 30 min), RN1.3 (paginacao
+ * de 20), RN1.4/1.5 (delegadas ao HttpJsonClient), RN1.6 (idioma preferido pt-br
+ * com fallback en, com deduplicacao de capitulos). EX1/EX2 degradam para o cache.
  */
 public final class MangaDexService {
 
     private static final Logger log = LoggerFactory.getLogger(MangaDexService.class);
 
-    /** Limite prático de offset da API do MangaDex. */
     private static final int OFFSET_MAXIMO = 10_000;
     private static final int LIMITE_FEED = 100;
 
@@ -45,36 +43,32 @@ public final class MangaDexService {
     private final CacheBuscaRepository cache;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    /** Lista de gêneros memoizada (as tags do MangaDex são estáticas). */
+    /** Lista de generos memoizada (as tags do MangaDex sao estaticas). */
     private List<Genero> generosCache;
 
     public MangaDexService() {
         this(new HttpJsonClient(), new CacheBuscaRepository());
-        cache.removerExpirados();   // higiene do cache no start (não roda em testes com mock)
+        cache.removerExpirados();
     }
 
-    /** Construtor para injeção de dependências (facilita testes com Mockito). */
+    /** Construtor para injecao de dependencias (facilita testes com Mockito). */
     public MangaDexService(final HttpJsonClient http, final CacheBuscaRepository cache) {
         this.http = http;
         this.cache = cache;
     }
 
-    // ------------------------------------------------------------------ busca
-
     /**
-     * Busca mangás no catálogo conforme os filtros (fluxo principal do UC1).
-     *
-     * <p>Se a API falhar (EX1/EX2) e houver um resultado em cache — mesmo expirado —
-     * ele é servido como degradação graciosa, marcado como {@code doCache}.</p>
+     * Busca mangas no catalogo conforme os filtros (fluxo principal do UC1).
+     * Se a API falhar (EX1/EX2) e houver cache - mesmo expirado - ele e servido.
      *
      * @throws RegraNegocioException se o termo violar a RN1.1
-     * @throws MangaDexException     em falha de comunicação sem cache disponível
+     * @throws MangaDexException em falha de comunicacao sem cache disponivel
      */
     public ResultadoBusca buscar(final FiltroBusca filtro) {
         validarTermo(filtro.termo());
 
         final String chave = filtro.chaveCache();
-        final Optional<String> emCache = cache.buscar(chave);          // RN1.2 / FA2
+        final Optional<String> emCache = cache.buscar(chave);
         if (emCache.isPresent()) {
             try {
                 log.debug("Resultado de busca servido do cache para '{}'", filtro.termo());
@@ -90,14 +84,13 @@ public final class MangaDexService {
             cache.salvar(chave, root.toString());
             return parseResultado(root, filtro.pagina(), false);
         } catch (final MangaDexException e) {
-            // EX1/EX2: tenta o cache expirado antes de propagar o erro.
             final Optional<String> stale = cache.buscarIgnorandoValidade(chave);
             if (stale.isPresent()) {
                 try {
-                    log.warn("API indisponível; servindo cache antigo. Causa: {}", e.getMessage());
+                    log.warn("API indisponivel; servindo cache antigo. Causa: {}", e.getMessage());
                     return parseResultado(mapper.readTree(stale.get()), filtro.pagina(), true);
                 } catch (final Exception ignored) {
-                    // cache ilegível: cai no throw abaixo
+                    // cache ilegivel: cai no throw abaixo
                 }
             }
             throw e;
@@ -105,7 +98,6 @@ public final class MangaDexService {
     }
 
     private void validarTermo(final String termo) {
-        // FA1: termo vazio é permitido (lista os mangás populares).
         if (!termo.isBlank() && termo.strip().length() < AppConfig.TERMO_BUSCA_MINIMO) {
             throw new RegraNegocioException(
                     "Digite ao menos " + AppConfig.TERMO_BUSCA_MINIMO + " caracteres para buscar.");
@@ -113,7 +105,7 @@ public final class MangaDexService {
     }
 
     private String montarUrlBusca(final FiltroBusca filtro) {
-        final int offset = filtro.pagina() * AppConfig.TAMANHO_PAGINA;       // RN1.3
+        final int offset = filtro.pagina() * AppConfig.TAMANHO_PAGINA;
         final StringBuilder url = new StringBuilder(AppConfig.API_BASE)
                 .append("/manga?limit=").append(AppConfig.TAMANHO_PAGINA)
                 .append("&offset=").append(offset)
@@ -121,12 +113,11 @@ public final class MangaDexService {
                 .append("&contentRating[]=safe&contentRating[]=suggestive");
 
         if (filtro.termo().isBlank()) {
-            url.append("&order[followedCount]=desc");                        // FA1: populares
+            url.append("&order[followedCount]=desc");
         } else {
             url.append("&title=").append(encode(filtro.termo()))
                .append("&order[relevance]=desc");
         }
-        // MNG-32: filtro por gênero. generos() carrega os UUIDs das tags selecionadas.
         if (!filtro.generos().isEmpty()) {
             for (final String tagId : filtro.generos()) {
                 url.append("&includedTags[]=").append(tagId);
@@ -136,11 +127,7 @@ public final class MangaDexService {
         return url.toString();
     }
 
-    /**
-     * Lista os gêneros disponíveis no MangaDex (tags do grupo "genre"), para
-     * alimentar o filtro de busca (MNG-32). O resultado é memoizado, pois as
-     * tags do MangaDex são essencialmente estáticas.
-     */
+    /** Lista os generos disponiveis (tags do grupo "genre"), memoizado (MNG-32). */
     public List<Genero> listarGeneros() {
         if (generosCache != null) {
             return generosCache;
@@ -161,26 +148,21 @@ public final class MangaDexService {
         return generosCache;
     }
 
-    // ------------------------------------------------------------------ ficha
-
-    /** Carrega a ficha completa de um mangá (passo 8 do fluxo principal). */
+    /** Carrega a ficha completa de um manga (passo 8 do fluxo principal). */
     public Manga detalhar(final String mangaId) {
         final String url = AppConfig.API_BASE + "/manga/" + mangaId
                 + "?includes[]=cover_art&includes[]=author";
         final JsonNode root = http.getJson(url);
         final JsonNode data = root.get("data");
         if (data == null || data.isMissingNode()) {
-            throw new MangaDexException("Mangá não encontrado: " + mangaId);
+            throw new MangaDexException("Manga nao encontrado: " + mangaId);
         }
         return parseManga(data);
     }
 
     /**
-     * Lista os capítulos de um mangá no idioma preferido com fallback (RN1.6).
-     *
-     * <p>Pagina o feed completo (acima de 100 capítulos) e deduplica por número:
-     * quando o mesmo capítulo existe em pt-br e en (ou em vários grupos), mantém
-     * uma única entrada, preferindo pt-br. Oneshots sem número não são colapsados.</p>
+     * Lista os capitulos no idioma preferido com fallback (RN1.6). Pagina o feed
+     * completo (acima de 100) e deduplica por numero preferindo pt-br.
      */
     public List<Capitulo> listarCapitulos(final String mangaId) {
         final Map<String, Capitulo> porChave = new LinkedHashMap<>();
@@ -211,15 +193,13 @@ public final class MangaDexService {
                     porChave.put(chave, c);
                 } else if (AppConfig.IDIOMA_PREFERIDO.equals(c.idioma())
                         && !AppConfig.IDIOMA_PREFERIDO.equals(existente.idioma())) {
-                    porChave.put(chave, c);   // RN1.6: pt-br tem prioridade sobre o fallback
+                    porChave.put(chave, c);
                 }
             }
             offset += LIMITE_FEED;
         }
         return new ArrayList<>(porChave.values());
     }
-
-    // ------------------------------------------------------------ parsing JSON
 
     private ResultadoBusca parseResultado(final JsonNode root, final int pagina, final boolean doCache) {
         final List<Manga> mangas = new ArrayList<>();
@@ -237,8 +217,8 @@ public final class MangaDexService {
         final String id = node.path("id").asText();
         final JsonNode attr = node.path("attributes");
 
-        final String titulo = escolherLocalizado(attr.path("title"), attr.path("altTitles"), "(sem título)");
-        final String sinopse = escolherLocalizado(attr.path("description"), null, "Sem sinopse disponível.");
+        final String titulo = escolherLocalizado(attr.path("title"), attr.path("altTitles"), "(sem titulo)");
+        final String sinopse = escolherLocalizado(attr.path("description"), null, "Sem sinopse disponivel.");
         final String status = attr.path("status").asText("desconhecido");
         final String idiomaOriginal = attr.path("originalLanguage").asText("");
 
@@ -276,4 +256,36 @@ public final class MangaDexService {
         final String numero = attr.path("chapter").asText("");
         final String titulo = attr.path("title").asText("");
         final String idioma = attr.path("translatedLanguage").asText("");
-        final int paginas = attr.path("pages"
+        final int paginas = attr.path("pages").asInt(0);
+        return new Capitulo(id, mangaId, numero, titulo, idioma, paginas);
+    }
+
+    private String escolherLocalizado(final JsonNode mapa, final JsonNode altTitles, final String padrao) {
+        if (mapa != null && mapa.isObject()) {
+            if (mapa.has(AppConfig.IDIOMA_PREFERIDO)) {
+                return mapa.get(AppConfig.IDIOMA_PREFERIDO).asText();
+            }
+            if (mapa.has(AppConfig.IDIOMA_FALLBACK)) {
+                return mapa.get(AppConfig.IDIOMA_FALLBACK).asText();
+            }
+        }
+        if (altTitles != null && altTitles.isArray()) {
+            for (final JsonNode alt : altTitles) {
+                if (alt.has(AppConfig.IDIOMA_PREFERIDO)) {
+                    return alt.get(AppConfig.IDIOMA_PREFERIDO).asText();
+                }
+            }
+        }
+        if (mapa != null && mapa.isObject()) {
+            final var nomes = mapa.fieldNames();
+            if (nomes.hasNext()) {
+                return mapa.get(nomes.next()).asText();
+            }
+        }
+        return padrao;
+    }
+
+    private static String encode(final String valor) {
+        return URLEncoder.encode(valor, StandardCharsets.UTF_8);
+    }
+}
