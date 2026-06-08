@@ -18,8 +18,8 @@
     <top>
         <HBox spacing="10" styleClass="barra-superior">
             <Label text="Mango" styleClass="logo"/>
-            <TextField fx:id="campoBusca" promptText="Buscar mangá por título..." HBox.hgrow="ALWAYS"/>
-            <MenuButton fx:id="menuGeneros" text="Gêneros"/>
+            <TextField fx:id="campoBusca" promptText="Buscar manga por titulo..." HBox.hgrow="ALWAYS"/>
+            <MenuButton fx:id="menuGeneros" text="Generos"/>
             <Button fx:id="btnBuscar" text="Buscar" onAction="#onBuscar" defaultButton="true"/>
             <ProgressIndicator fx:id="progresso" prefWidth="28" prefHeight="28"/>
         </HBox>
@@ -35,7 +35,12 @@
 
     <bottom>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="barra-inferior">
-            <Button fx:id="btnAnterior" text="◀ Anterior" onAction="#onAnterior"/>
+            <Button fx:id="btnAnterior" text="Anterior" onAction="#onAnterior"/>
             <Label fx:id="lblPagina"/>
-            <Button fx:id="btnProxima" text="Próxima ▶" onAction="#onProxima"/>
+            <Button fx:id="btnProxima" text="Proxima" onAction="#onProxima"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblStatus" styleClass="status"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
