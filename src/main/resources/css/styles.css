@@ -106,3 +106,22 @@
     -fx-font-weight: bold;
     -fx-padding: 8 0 0 0;
 }
+
+/* Leitor (UC2) */
+.leitor-root {
+    -fx-background-color: #15161b;
+}
+
+.leitor-titulo {
+    -fx-text-fill: #f5f6fa;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.leitor-area {
+    -fx-background-color: #15161b;
+}
+
+.leitor-painel {
+    -fx-padding: 10;
+}
