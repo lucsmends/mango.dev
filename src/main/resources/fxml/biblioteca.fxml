@@ -17,8 +17,7 @@
     <top>
         <HBox spacing="12" alignment="CENTER_LEFT" styleClass="barra">
             <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
-            <Button text="← Voltar" onAction="#voltar"/>
-            <Label text="Minha Biblioteca" styleClass="titulo-ficha"/>
+            <Label text="MANGO" styleClass="marca"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button text="Nova lista" onAction="#novaLista"/>
             <Button fx:id="btnRemover" text="Remover lista" onAction="#removerLista"/>
@@ -31,6 +30,7 @@
             <Button text="Início" maxWidth="200" onAction="#irInicio" styleClass="nav-item"/>
             <Button text="Favoritos" maxWidth="200" onAction="#irFavoritos" styleClass="nav-item"/>
             <Button text="Histórico" maxWidth="200" onAction="#irHistorico" styleClass="nav-item"/>
+            <Button text="Catálogo" maxWidth="200" onAction="#irCatalogo" styleClass="nav-item"/>
             <Label text="MINHAS LISTAS" styleClass="nav-secao"/>
             <ListView fx:id="listaColecoes" VBox.vgrow="ALWAYS"/>
         </VBox>

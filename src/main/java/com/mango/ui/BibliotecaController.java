@@ -74,6 +74,17 @@ public class BibliotecaController {
     }
 
     @FXML
+    public void irCatalogo() {
+        try {
+            final Parent raiz =
+                    FXMLLoader.load(getClass().getResource("/fxml/catalogo.fxml"));
+            Navegador.ir(raiz);
+        } catch (final IOException e) {
+            log.error("Falha ao abrir o catálogo", e);
+        }
+    }
+
+    @FXML
     public void irInicio() {
         listaColecoes.getSelectionModel().clearSelection();
         btnRemover.setDisable(true);
