@@ -19,7 +19,7 @@ public class MangoApp extends Application {
         Database.inicializar();
 
         final Parent catalogo = FXMLLoader.load(
-                getClass().getResource("/fxml/biblioteca.fxml"));
+                getClass().getResource("/fxml/catalogo.fxml"));
 
         Navegador.iniciar(stage, catalogo);
         stage.setTitle("Mango — Leitor de Mangás");
