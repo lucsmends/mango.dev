@@ -25,6 +25,7 @@
             <Button fx:id="btnBuscar" text="Buscar" onAction="#buscar" defaultButton="true"/>
             <Label fx:id="lblStatus" styleClass="status"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Biblioteca" onAction="#abrirBiblioteca"/>
         </HBox>
     </top>
 

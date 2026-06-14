@@ -164,6 +164,17 @@ public class CatalogoController {
         }
     }
 
+    @FXML
+    public void abrirBiblioteca() {
+        try {
+            final Parent raiz =
+                    FXMLLoader.load(getClass().getResource("/fxml/biblioteca.fxml"));
+            Navegador.ir(raiz);
+        } catch (final IOException e) {
+            log.error("Falha ao abrir a biblioteca", e);
+        }
+    }
+
     private void carregarGeneros() {
         final Task<List<Genero>> task = new Task<>() {
             @Override
