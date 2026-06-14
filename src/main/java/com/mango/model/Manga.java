@@ -2,29 +2,23 @@ package com.mango.model;
 
 import java.util.List;
 
-/**
- * Representa um mangá do catálogo do MangaDex (entidade de domínio imutável).
- *
- * @param id            identificador (UUID) do mangá no MangaDex
- * @param titulo        título no idioma preferido, com fallback
- * @param sinopse       descrição/sinopse
- * @param capaUrl       URL da imagem de capa (pode ser {@code null})
- * @param status        status de publicação (ongoing, completed, hiatus...)
- * @param generos       lista de gêneros/tags
- * @param autor         nome do autor principal (pode ser {@code null})
- * @param idiomaOriginal idioma original (ex.: "ja", "ko")
- */
+/** Mangá do catálogo (UC1). Imutável. */
 public record Manga(
         String id,
         String titulo,
-        String sinopse,
         String capaUrl,
         String status,
-        List<String> generos,
-        String autor,
-        String idiomaOriginal) {
+        Integer ano,
+        String sinopse,
+        String idiomaOriginal,
+        List<String> generos) {
 
     public Manga {
         generos = generos == null ? List.of() : List.copyOf(generos);
+    }
+
+    /** RN2.5 — mangás coreanos abrem em scroll vertical por padrão. */
+    public boolean coreano() {
+        return "ko".equalsIgnoreCase(idiomaOriginal);
     }
 }

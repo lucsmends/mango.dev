@@ -1,46 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.mango.controller.FichaController"
-            styleClass="ficha-root">
-
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.mango.ui.FichaController" styleClass="tela">
     <top>
-        <HBox styleClass="barra-superior">
-            <Button text="◀ Voltar ao catálogo" onAction="#onVoltar"/>
+        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="barra">
+            <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+            <Button text="← Voltar" onAction="#voltar"/>
+            <Label fx:id="lblTitulo" styleClass="titulo-ficha" wrapText="true"/>
         </HBox>
     </top>
 
     <center>
-        <HBox spacing="20" styleClass="ficha-conteudo">
-            <VBox spacing="8" alignment="TOP_CENTER">
-                <ImageView fx:id="imgCapa" fitWidth="240" fitHeight="340" preserveRatio="true"/>
-                <Label fx:id="lblStatus" styleClass="ficha-status"/>
+        <HBox spacing="24">
+            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+            <VBox spacing="10" alignment="TOP_CENTER" minWidth="240">
+                <ImageView fx:id="imgCapa" fitWidth="240" fitHeight="336"/>
+                <Label fx:id="lblMeta" styleClass="meta"/>
+                <Label fx:id="lblGeneros" styleClass="generos" wrapText="true"
+                       maxWidth="240" textAlignment="CENTER"/>
             </VBox>
 
-            <VBox spacing="10" HBox.hgrow="ALWAYS">
-                <Label fx:id="lblTitulo" styleClass="ficha-titulo" wrapText="true"/>
-                <Label fx:id="lblAutor" styleClass="ficha-autor"/>
-                <Label fx:id="lblGeneros" styleClass="ficha-generos" wrapText="true"/>
-                <ScrollPane fitToWidth="true" prefHeight="160" styleClass="ficha-sinopse-area">
-                    <content>
-                        <Label fx:id="lblSinopse" wrapText="true" styleClass="ficha-sinopse"/>
-                    </content>
+            <VBox spacing="12" HBox.hgrow="ALWAYS">
+                <ScrollPane fitToWidth="true" prefHeight="170" styleClass="rolagem">
+                    <Label fx:id="lblSinopse" wrapText="true" styleClass="sinopse">
+                        <padding><Insets top="8" right="12" bottom="8" left="12"/></padding>
+                    </Label>
                 </ScrollPane>
-                <Label text="Capítulos" styleClass="secao-titulo"/>
-                <Label fx:id="lblStatusCapitulos" styleClass="status"/>
-                <ListView fx:id="listaCapitulos" VBox.vgrow="ALWAYS"/>
+
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Label fx:id="lblStatusCapitulos" styleClass="status"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Ler capítulo selecionado" onAction="#abrirLeitor"/>
+                </HBox>
+
+                <StackPane VBox.vgrow="ALWAYS">
+                    <ListView fx:id="listaCapitulos"/>
+                    <ProgressIndicator fx:id="progresso" maxWidth="48" maxHeight="48"/>
+                </StackPane>
             </VBox>
         </HBox>
     </center>
-
 </BorderPane>

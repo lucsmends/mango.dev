@@ -1,46 +1,29 @@
 package com.mango.model;
 
-import java.util.List;
-
 /**
- * Parâmetros de uma busca no catálogo (UC1).
- *
- * @param termo   termo de pesquisa por título (pode ser vazio = catálogo geral, FA1)
- * @param generos gêneros selecionados (atualmente reservado para evolução do MNG-32)
- * @param autor   autor (reservado para evolução do MNG-32)
- * @param pagina  página solicitada, base 0 (RN1.3)
+ * Combinação de filtros de uma busca (UC1): termo, gênero e página.
+ * A chave de cache (RN1.2) é derivada exatamente desta combinação.
  */
-public record FiltroBusca(
-        String termo,
-        List<String> generos,
-        String autor,
-        int pagina) {
+public record FiltroBusca(String termo, Genero genero, int pagina) {
 
     public FiltroBusca {
-        termo = termo == null ? "" : termo.trim();
-        generos = generos == null ? List.of() : List.copyOf(generos);
-        autor = autor == null ? "" : autor.trim();
+        termo = termo == null ? "" : termo.strip();
         if (pagina < 0) {
             pagina = 0;
         }
     }
 
-    /** Construtor de conveniência para busca simples por título na primeira página. */
-    public static FiltroBusca porTitulo(final String termo) {
-        return new FiltroBusca(termo, List.of(), "", 0);
+    public boolean semTermo() {
+        return termo.isEmpty();
     }
 
-    /** Cria uma cópia apontando para outra página, preservando os filtros. */
-    public FiltroBusca naPagina(final int novaPagina) {
-        return new FiltroBusca(termo, generos, autor, novaPagina);
-    }
-
-    /** Chave estável usada para indexar o cache de buscas (RN1.2). */
+    /** Chave única por combinação de filtros (RN1.2). */
     public String chaveCache() {
-        return String.join("|",
-                termo.toLowerCase(),
-                String.join(",", generos).toLowerCase(),
-                autor.toLowerCase(),
-                Integer.toString(pagina));
+        final String gen = genero == null ? "-" : genero.id();
+        return termo.toLowerCase() + "|" + gen + "|" + pagina;
+    }
+
+    public FiltroBusca comPagina(final int novaPagina) {
+        return new FiltroBusca(termo, genero, novaPagina);
     }
 }

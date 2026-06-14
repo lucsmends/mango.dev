@@ -1,33 +1,22 @@
 package com.mango.model;
 
+import com.mango.config.Config;
+
 import java.util.List;
 
-/**
- * Resultado paginado de uma busca no catálogo (UC1).
- *
- * @param mangas       mangás da página atual
- * @param pagina       índice da página atual (base 0)
- * @param total        total de resultados informado pela API
- * @param tamanhoPagina itens por página (RN1.3)
- * @param doCache      indica se o resultado veio do cache local (FA2)
- */
+/** Página de resultados de busca (UC1), com metadados de paginação (RN1.3). */
 public record ResultadoBusca(
         List<Manga> mangas,
-        int pagina,
         int total,
-        int tamanhoPagina,
+        int pagina,
         boolean doCache) {
 
     public ResultadoBusca {
         mangas = mangas == null ? List.of() : List.copyOf(mangas);
     }
 
-    /** Número total de páginas, no mínimo 1. */
     public int totalPaginas() {
-        if (total <= 0 || tamanhoPagina <= 0) {
-            return 1;
-        }
-        return (int) Math.ceil((double) total / tamanhoPagina);
+        return (int) Math.ceil((double) total / Config.TAMANHO_PAGINA);
     }
 
     public boolean temProxima() {
@@ -40,5 +29,10 @@ public record ResultadoBusca(
 
     public boolean vazio() {
         return mangas.isEmpty();
+    }
+
+    /** Mesmo resultado, marcado como vindo do cache (FA2). */
+    public ResultadoBusca marcadoComoCache() {
+        return new ResultadoBusca(mangas, total, pagina, true);
     }
 }
