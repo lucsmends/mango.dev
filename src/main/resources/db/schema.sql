@@ -3,14 +3,12 @@
 -- Aplicado de forma idempotente na inicialização.
 -- =====================================================================
 
--- RN1.2: cache de buscas por combinação de filtros (TTL validado em código)
 CREATE TABLE IF NOT EXISTS cache_busca (
     chave      VARCHAR(600) PRIMARY KEY,
     payload    CLOB         NOT NULL,
     criado_em  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- RN2.2 / RN2.3 / FA5: progresso de leitura por capítulo
 CREATE TABLE IF NOT EXISTS progresso_leitura (
     manga_id      VARCHAR(64) NOT NULL,
     capitulo_id   VARCHAR(64) NOT NULL,
@@ -20,6 +18,11 @@ CREATE TABLE IF NOT EXISTS progresso_leitura (
     atualizado_em TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (manga_id, capitulo_id)
 );
+
+-- UC3: dados para exibir histórico/continuar lendo com capa e título
+ALTER TABLE progresso_leitura ADD COLUMN IF NOT EXISTS titulo     VARCHAR(500);
+ALTER TABLE progresso_leitura ADD COLUMN IF NOT EXISTS capa_url   VARCHAR(1000);
+ALTER TABLE progresso_leitura ADD COLUMN IF NOT EXISTS cap_numero VARCHAR(40);
 
 -- UC3 — RN3.2: coleções nomeadas da biblioteca pessoal
 CREATE TABLE IF NOT EXISTS colecao (
@@ -44,6 +47,7 @@ CREATE TABLE IF NOT EXISTS item_biblioteca (
 );
 
 -- UC3 — RN3.3: coleções padrão não removíveis (idempotente)
+MERGE INTO colecao (nome, removivel) KEY(nome) VALUES ('Favoritos', FALSE);
 MERGE INTO colecao (nome, removivel) KEY(nome) VALUES ('Lendo', FALSE);
 MERGE INTO colecao (nome, removivel) KEY(nome) VALUES ('Concluídos', FALSE);
 MERGE INTO colecao (nome, removivel) KEY(nome) VALUES ('Quero Ler', FALSE);

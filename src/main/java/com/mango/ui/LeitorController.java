@@ -279,7 +279,7 @@ public class LeitorController {
         final int total = paginas.size();
         executor.submit(() -> {
             try {
-                service.salvarProgresso(manga.id(), capitulo.id(), pagina, total);
+                service.salvarProgresso(manga, capitulo, pagina, total);
             } catch (final RuntimeException ex) {
                 log.warn("Falha ao salvar progresso", ex);
             }

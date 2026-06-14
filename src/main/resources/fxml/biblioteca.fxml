@@ -10,6 +10,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.mango.ui.BibliotecaController" styleClass="tela">
@@ -23,17 +24,30 @@
             <Button fx:id="btnRemover" text="Remover lista" onAction="#removerLista"/>
         </HBox>
     </top>
+
     <left>
-        <ListView fx:id="listaColecoes" prefWidth="220"/>
+        <VBox spacing="6" prefWidth="220" minWidth="200" styleClass="lateral">
+            <padding><Insets top="14" right="10" bottom="14" left="10"/></padding>
+            <Button text="Início" maxWidth="200" onAction="#irInicio" styleClass="nav-item"/>
+            <Button text="Favoritos" maxWidth="200" onAction="#irFavoritos" styleClass="nav-item"/>
+            <Button text="Histórico" maxWidth="200" onAction="#irHistorico" styleClass="nav-item"/>
+            <Label text="MINHAS LISTAS" styleClass="nav-secao"/>
+            <ListView fx:id="listaColecoes" VBox.vgrow="ALWAYS"/>
+        </VBox>
     </left>
+
     <center>
-        <StackPane>
-            <ScrollPane fitToWidth="true" styleClass="rolagem">
-                <TilePane fx:id="grade" hgap="18" vgap="22" prefColumns="5">
-                    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-                </TilePane>
-            </ScrollPane>
-            <Label fx:id="lblVazio" styleClass="status"/>
-        </StackPane>
+        <VBox spacing="8">
+            <padding><Insets top="12" right="6" bottom="6" left="12"/></padding>
+            <Label fx:id="lblSecao" styleClass="titulo-ficha"/>
+            <StackPane VBox.vgrow="ALWAYS">
+                <ScrollPane fitToWidth="true" styleClass="rolagem">
+                    <TilePane fx:id="grade" hgap="18" vgap="22" prefColumns="5">
+                        <padding><Insets top="8" right="20" bottom="20" left="8"/></padding>
+                    </TilePane>
+                </ScrollPane>
+                <Label fx:id="lblVazio" styleClass="status"/>
+            </StackPane>
+        </VBox>
     </center>
 </BorderPane>
