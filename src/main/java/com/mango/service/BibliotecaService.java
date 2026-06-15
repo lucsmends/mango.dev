@@ -13,8 +13,18 @@ import java.util.Set;
 /** Regras da biblioteca pessoal (UC3): coleções e itens. */
 public class BibliotecaService {
 
-    private final ColecaoRepository colecoes = new ColecaoRepository();
-    private final BibliotecaRepository itens = new BibliotecaRepository();
+    private final ColecaoRepository colecoes;
+    private final BibliotecaRepository itens;
+
+    public BibliotecaService() {
+        this(new ColecaoRepository(), new BibliotecaRepository());
+    }
+
+    /** Injeção para testes: repositórios podem ser stubs em memória. */
+    public BibliotecaService(final ColecaoRepository colecoes, final BibliotecaRepository itens) {
+        this.colecoes = colecoes;
+        this.itens = itens;
+    }
 
     public List<Colecao> listarColecoes() {
         return colecoes.listar();
@@ -41,7 +51,9 @@ public class BibliotecaService {
     }
 
     public void adicionar(final long colecaoId, final Manga manga) {
-        itens.adicionar(colecaoId, new ItemBiblioteca(manga.id(), manga.titulo(), manga.capaUrl()));
+        itens.adicionar(colecaoId,
+                new ItemBiblioteca(manga.id(), manga.titulo(), manga.capaUrl()),
+                manga.generos());
     }
 
     public void remover(final long colecaoId, final String mangaId) {

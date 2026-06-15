@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS item_biblioteca (
         REFERENCES colecao(id) ON DELETE CASCADE
 );
 
+-- UC3 — relatórios: gêneros do mangá para "gêneros favoritos" (lista separada por ';')
+ALTER TABLE item_biblioteca ADD COLUMN IF NOT EXISTS generos VARCHAR(1000);
+
 -- UC3 — RN3.3: coleções padrão não removíveis (idempotente)
 MERGE INTO colecao (nome, removivel) KEY(nome) VALUES ('Favoritos', FALSE);
 MERGE INTO colecao (nome, removivel) KEY(nome) VALUES ('Lendo', FALSE);

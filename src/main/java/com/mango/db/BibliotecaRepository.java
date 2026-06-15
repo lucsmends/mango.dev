@@ -16,16 +16,17 @@ import java.util.Set;
 public class BibliotecaRepository {
 
     /** Adiciona (idempotente — RN3.1: sem duplicar na mesma coleção). */
-    public void adicionar(final long colecaoId, final ItemBiblioteca item) {
+    public void adicionar(final long colecaoId, final ItemBiblioteca item, final List<String> generos) {
         final String sql = """
-                MERGE INTO item_biblioteca (colecao_id, manga_id, titulo, capa_url)
-                KEY (colecao_id, manga_id) VALUES (?, ?, ?, ?)""";
+                MERGE INTO item_biblioteca (colecao_id, manga_id, titulo, capa_url, generos)
+                KEY (colecao_id, manga_id) VALUES (?, ?, ?, ?, ?)""";
         try (Connection con = Database.conectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setLong(1, colecaoId);
             ps.setString(2, item.mangaId());
             ps.setString(3, item.titulo());
             ps.setString(4, item.capaUrl());
+            ps.setString(5, generos == null || generos.isEmpty() ? null : String.join(";", generos));
             ps.executeUpdate();
         } catch (final SQLException e) {
             throw new MangoException("Não foi possível salvar na biblioteca.", e);

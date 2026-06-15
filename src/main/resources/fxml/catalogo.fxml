@@ -46,6 +46,7 @@
             <Button text="Início" maxWidth="200" onAction="#irInicio" styleClass="nav-item"/>
             <Button text="Favoritos" maxWidth="200" onAction="#irFavoritos" styleClass="nav-item"/>
             <Button text="Histórico" maxWidth="200" onAction="#irHistorico" styleClass="nav-item"/>
+            <Button text="Relatórios" maxWidth="200" onAction="#irRelatorios" styleClass="nav-item"/>
             <HBox spacing="6" alignment="CENTER_LEFT">
                 <Label text="MINHAS LISTAS" styleClass="nav-secao"/>
                 <Region HBox.hgrow="ALWAYS"/>

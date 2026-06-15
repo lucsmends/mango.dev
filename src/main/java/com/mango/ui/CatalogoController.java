@@ -117,6 +117,17 @@ public class CatalogoController {
         carregarLeituras(historico::historico, "Seu histórico de leitura está vazio.");
     }
 
+    @FXML
+    public void irRelatorios() {
+        try {
+            final Parent raiz = new FXMLLoader(
+                    getClass().getResource("/fxml/relatorios.fxml")).load();
+            Navegador.ir(raiz);
+        } catch (final IOException e) {
+            log.error("Falha ao abrir os relatórios", e);
+        }
+    }
+
     // ----------------------------------------------------------- busca
 
     @FXML
