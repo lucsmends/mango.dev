@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mango.db.ProgressoRepository;
 import com.mango.exception.ApiException;
+import com.mango.model.Capitulo;
+import com.mango.model.Manga;
 import com.mango.model.Progresso;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,14 +32,19 @@ class LeitorServiceTest {
         }
     }
 
+    private static final Manga MANGA =
+            new Manga("m1", "One Piece", "capa.jpg", "Em andamento", 1997, "Piratas.", "ja", List.of());
+    private static final Capitulo CAP =
+            new Capitulo("c1", "12", "Romance Dawn", "pt-br", 10);
+
     /** Progresso em memória, sem H2. */
     private static class ProgressoStub extends ProgressoRepository {
         final Map<String, Progresso> mapa = new HashMap<>();
 
         @Override
         public void salvar(final String mangaId, final String capituloId,
-                           final int paginaAtual, final int totalPaginas,
-                           final boolean concluido) {
+                           final String titulo, final String capaUrl, final String capNumero,
+                           final int paginaAtual, final int totalPaginas, final boolean concluido) {
             mapa.put(mangaId + "/" + capituloId,
                     new Progresso(paginaAtual, totalPaginas, concluido));
         }
@@ -79,7 +87,7 @@ class LeitorServiceTest {
         final ProgressoStub repo = new ProgressoStub();
         final LeitorService service = new LeitorService(u -> json("{}"), repo);
 
-        service.salvarProgresso("m1", "c1", 3, 10);
+        service.salvarProgresso(MANGA, CAP, 3, 10);
 
         final Progresso p = repo.mapa.get("m1/c1");
         assertEquals(3, p.paginaAtual());
@@ -91,7 +99,7 @@ class LeitorServiceTest {
         final ProgressoStub repo = new ProgressoStub();
         final LeitorService service = new LeitorService(u -> json("{}"), repo);
 
-        service.salvarProgresso("m1", "c1", 9, 10);   // zero-based: página 10 de 10
+        service.salvarProgresso(MANGA, CAP, 9, 10);   // zero-based: página 10 de 10
 
         assertTrue(repo.mapa.get("m1/c1").concluido());
     }
@@ -101,7 +109,7 @@ class LeitorServiceTest {
         final ProgressoStub repo = new ProgressoStub();
         final LeitorService service = new LeitorService(u -> json("{}"), repo);
 
-        service.salvarProgresso("m1", "c1", 4, 10);
+        service.salvarProgresso(MANGA, CAP, 4, 10);
 
         final Optional<Progresso> p = service.progressoSalvo("m1", "c1");
         assertTrue(p.isPresent());
