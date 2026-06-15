@@ -21,6 +21,7 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.shape.Rectangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,10 @@ public class FichaController {
 
     @FXML
     public void initialize() {
+        final Rectangle clip = new Rectangle(240, 336);
+        clip.setArcWidth(20);
+        clip.setArcHeight(20);
+        imgCapa.setClip(clip);
         listaCapitulos.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(final Capitulo item, final boolean vazio) {

@@ -27,6 +27,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.Node;
+import javafx.scene.shape.Rectangle;
+import javafx.animation.ScaleTransition;
+import javafx.util.Duration;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
@@ -299,6 +303,10 @@ public class CatalogoController {
         capa.setFitWidth(CAPA_LARGURA);
         capa.setFitHeight(CAPA_ALTURA);
         capa.setPreserveRatio(false);
+        final Rectangle clip = new Rectangle(CAPA_LARGURA, CAPA_ALTURA);
+        clip.setArcWidth(18);
+        clip.setArcHeight(18);
+        capa.setClip(clip);
         if (capaUrl != null) {
             capa.setImage(new Image(capaUrl, CAPA_LARGURA, CAPA_ALTURA, false, true, true));
         }
@@ -318,6 +326,8 @@ public class CatalogoController {
         }
         card.getStyleClass().add("card");
         card.setAlignment(Pos.TOP_CENTER);
+        card.setOnMouseEntered(e -> animar(card, 1.04));
+        card.setOnMouseExited(e -> animar(card, 1.0));
         return card;
     }
 
@@ -374,6 +384,13 @@ public class CatalogoController {
     private void ocupado(final boolean valor) {
         progresso.setVisible(valor);
         btnBuscar.setDisable(valor);
+    }
+
+    private static void animar(final Node alvo, final double escala) {
+        final ScaleTransition st = new ScaleTransition(Duration.millis(130), alvo);
+        st.setToX(escala);
+        st.setToY(escala);
+        st.play();
     }
 
     private static void rodar(final Task<?> task, final String nome) {
