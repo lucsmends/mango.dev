@@ -206,12 +206,22 @@ public class LeitorController {
         imgPagina.setImage(imagem);
         aplicarZoom();
 
+        final int aguardando = indice;                     // guarda contra troca de página
         if (imagem.isError()) {
-            falhaDePagina();
-        } else if (imagem.getProgress() < 1.0) {
-            final int aguardando = indice;
+            progresso.setVisible(false);
+            falhaDePagina();                               // EX1
+        } else if (imagem.getProgress() >= 1.0) {
+            progresso.setVisible(false);                   // já está em cache, carregada
+        } else {
+            progresso.setVisible(true);                    // carregando: mostra o spinner
+            imagem.progressProperty().addListener((obs, antes, agora) -> {
+                if (aguardando == indice && agora.doubleValue() >= 1.0) {
+                    progresso.setVisible(false);
+                }
+            });
             imagem.errorProperty().addListener((obs, antes, agora) -> {
                 if (agora && aguardando == indice) {
+                    progresso.setVisible(false);
                     falhaDePagina();                       // EX1
                 }
             });
