@@ -2,13 +2,13 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.shape.Ellipse?>
@@ -23,14 +23,8 @@
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="barra">
             <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
-            <Pane prefWidth="46" prefHeight="38" minWidth="46" maxWidth="46">
-                <SVGPath content="M9,22 C7,11 18,4 29,7 C39,10 42,21 37,29 C32,37 17,38 12,30 C10,27 9,25 9,22 Z" fill="#F4A024"/>
-                <Ellipse centerX="20" centerY="17" radiusX="5" radiusY="2.8" fill="#FFD66B" opacity="0.8"/>
-                <Ellipse centerX="31" centerY="9" radiusX="6.5" radiusY="3" fill="#46A04A" rotate="-35"/>
-            </Pane>
             <TextField fx:id="txtBusca" promptText="Buscar por título (mín. 2 caracteres)…"
-                       onAction="#buscar" prefWidth="300"/>
-            <ComboBox fx:id="cmbGenero" promptText="Gênero" prefWidth="170"/>
+                       onAction="#buscar" prefWidth="320"/>
             <Button fx:id="btnBuscar" text="Buscar" onAction="#buscar" defaultButton="true"/>
             <Label fx:id="lblStatus" styleClass="status"/>
             <Region HBox.hgrow="ALWAYS"/>
@@ -41,26 +35,38 @@
     </top>
 
     <left>
-        <VBox spacing="6" prefWidth="220" minWidth="200" styleClass="lateral">
-            <padding><Insets top="14" right="10" bottom="14" left="10"/></padding>
-            <Button text="Início" maxWidth="200" onAction="#irInicio" styleClass="nav-item"/>
-            <Button text="Favoritos" maxWidth="200" onAction="#irFavoritos" styleClass="nav-item"/>
-            <Button text="Histórico" maxWidth="200" onAction="#irHistorico" styleClass="nav-item"/>
-            <Button text="Relatórios" maxWidth="200" onAction="#irRelatorios" styleClass="nav-item"/>
+        <VBox spacing="6" prefWidth="240" minWidth="220" styleClass="lateral">
+            <padding><Insets top="20" right="16" bottom="20" left="16"/></padding>
+
+            <HBox spacing="10" alignment="CENTER_LEFT" styleClass="logo">
+                <padding><Insets top="6" right="8" bottom="20" left="6"/></padding>
+                <Pane prefWidth="46" prefHeight="38" minWidth="46" maxWidth="46">
+                    <SVGPath content="M9,22 C7,11 18,4 29,7 C39,10 42,21 37,29 C32,37 17,38 12,30 C10,27 9,25 9,22 Z" fill="#FF9F1C"/>
+                    <Ellipse centerX="20" centerY="17" radiusX="5" radiusY="2.8" fill="#FFD66B" opacity="0.8"/>
+                    <Ellipse centerX="31" centerY="9" radiusX="6.5" radiusY="3" fill="#46A04A" rotate="-35"/>
+                </Pane>
+                <Label text="Mango" styleClass="logo-wordmark"/>
+            </HBox>
+
+            <Button text="Catálogo" maxWidth="Infinity" onAction="#irInicio" styleClass="nav-item"/>
+            <Button text="Favoritos" maxWidth="Infinity" onAction="#irFavoritos" styleClass="nav-item"/>
+            <Button text="Histórico" maxWidth="Infinity" onAction="#irHistorico" styleClass="nav-item"/>
+            <Button text="Relatórios" maxWidth="Infinity" onAction="#irRelatorios" styleClass="nav-item"/>
             <HBox spacing="6" alignment="CENTER_LEFT">
                 <Label text="MINHAS LISTAS" styleClass="nav-secao"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button text="+" onAction="#novaLista"/>
             </HBox>
             <ListView fx:id="listaColecoes" VBox.vgrow="ALWAYS"/>
-            <Button fx:id="btnRemover" text="Remover lista" maxWidth="200" onAction="#removerLista"/>
+            <Button fx:id="btnRemover" text="Remover lista" maxWidth="Infinity" onAction="#removerLista"/>
         </VBox>
     </left>
 
     <center>
-        <VBox spacing="8">
-            <padding><Insets top="12" right="6" bottom="6" left="12"/></padding>
+        <VBox spacing="10">
+            <padding><Insets top="16" right="12" bottom="6" left="16"/></padding>
             <Label fx:id="lblSecao" styleClass="titulo-ficha"/>
+            <FlowPane fx:id="chipsGenero" hgap="8" vgap="8" styleClass="chips"/>
             <StackPane VBox.vgrow="ALWAYS">
                 <ScrollPane fitToWidth="true" styleClass="rolagem">
                     <TilePane fx:id="grade" hgap="18" vgap="22" prefColumns="5">

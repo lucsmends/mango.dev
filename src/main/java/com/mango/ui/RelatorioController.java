@@ -114,7 +114,7 @@ public class RelatorioController {
 
     private VBox metrica(final String valor, final String legenda) {
         final Label num = new Label(valor);
-        num.setStyle("-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: #F4A024;");
+        num.setStyle("-fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: #FF9F1C;");
         final Label leg = new Label(legenda);
         leg.getStyleClass().add("card-status");
         final VBox box = new VBox(4, num, leg);

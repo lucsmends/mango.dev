@@ -51,7 +51,7 @@
                 </HBox>
 
                 <StackPane VBox.vgrow="ALWAYS">
-                    <ListView fx:id="listaCapitulos"/>
+                    <ListView fx:id="listaCapitulos" styleClass="capitulos"/>
                     <ProgressIndicator fx:id="progresso" maxWidth="48" maxHeight="48"/>
                 </StackPane>
             </VBox>

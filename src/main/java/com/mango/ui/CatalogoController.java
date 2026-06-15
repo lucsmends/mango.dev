@@ -18,19 +18,22 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.Node;
 import javafx.scene.shape.Rectangle;
 import javafx.animation.ScaleTransition;
 import javafx.util.Duration;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
@@ -52,7 +55,7 @@ public class CatalogoController {
     private static final double CAPA_ALTURA = 210;
 
     @FXML private TextField txtBusca;
-    @FXML private ComboBox<Genero> cmbGenero;
+    @FXML private FlowPane chipsGenero;
     @FXML private Button btnBuscar;
     @FXML private Label lblStatus;
     @FXML private Label lblPagina;
@@ -70,6 +73,7 @@ public class CatalogoController {
     private final CatalogoService service = new CatalogoService();
     private final BibliotecaService biblioteca = new BibliotecaService();
     private final HistoricoService historico = new HistoricoService();
+    private final ToggleGroup grupoGeneros = new ToggleGroup();
 
     private FiltroBusca filtroAtual = new FiltroBusca("", null, 0);
     private ResultadoBusca ultimo;
@@ -134,7 +138,8 @@ public class CatalogoController {
     public void buscar() {
         listaColecoes.getSelectionModel().clearSelection();
         lblSecao.setText("Catálogo");
-        final Genero genero = cmbGenero.getValue();
+        final Toggle sel = grupoGeneros.getSelectedToggle();
+        final Genero genero = sel == null ? null : (Genero) sel.getUserData();
         executarBusca(new FiltroBusca(txtBusca.getText(),
                 genero != null && genero.id().isEmpty() ? null : genero, 0));
     }
@@ -378,12 +383,30 @@ public class CatalogoController {
             }
         };
         task.setOnSucceeded(e -> {
-            cmbGenero.getItems().add(new Genero("", "Todos os gêneros"));
-            cmbGenero.getItems().addAll(task.getValue());
-            cmbGenero.getSelectionModel().selectFirst();
+            chipsGenero.getChildren().clear();
+            adicionarChip(new Genero("", "Todos"), true);
+            for (final Genero g : task.getValue()) {
+                adicionarChip(g, false);
+            }
         });
         task.setOnFailed(e -> log.warn("Não foi possível carregar os gêneros", task.getException()));
         rodar(task, "generos");
+    }
+
+    private void adicionarChip(final Genero genero, final boolean selecionado) {
+        final ToggleButton chip = new ToggleButton(genero.nome());
+        chip.getStyleClass().add("chip");
+        chip.setToggleGroup(grupoGeneros);
+        chip.setUserData(genero);
+        chip.setSelected(selecionado);
+        chip.setOnAction(e -> {
+            if (chip.isSelected()) {
+                buscar();              // novo gênero escolhido
+            } else {
+                chip.setSelected(true); // impede ficar sem nenhum selecionado
+            }
+        });
+        chipsGenero.getChildren().add(chip);
     }
 
     private void desabilitarPaginacao() {
