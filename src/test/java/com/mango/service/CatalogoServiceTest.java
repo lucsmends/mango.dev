@@ -163,9 +163,56 @@ class CatalogoServiceTest {
                 json(u.contains("translatedLanguage[]=pt-br") ? feedVazio : feedEn),
                 new CacheStub());
 
-        final var caps = service.listarCapitulos("m1");
+        final var caps = service.listarCapitulos("m1", "ja");
 
         assertEquals(1, caps.size());
         assertEquals("en", caps.get(0).idioma());
+    }
+
+    // ---------- UC4: listagem multi-idioma ----------
+
+    @Test
+    void uc4_mesmoCapituloEmPtBrEEnMantemApenasPtBr() {
+        final String feedPt = """
+                { "data": [ { "id": "c1pt", "attributes": {
+                    "chapter": "1", "title": "", "translatedLanguage": "pt-br", "pages": 10 } } ] }""";
+        final String feedEn = """
+                { "data": [ { "id": "c1en", "attributes": {
+                    "chapter": "1", "title": "", "translatedLanguage": "en", "pages": 10 } } ] }""";
+        final CatalogoService service = new CatalogoService(u ->
+                json(u.contains("translatedLanguage[]=pt-br") ? feedPt : feedEn),
+                new CacheStub());
+
+        final var caps = service.listarCapitulos("m1", "ja");
+
+        assertEquals(1, caps.size());                 // capítulo 1 não duplica
+        assertEquals("pt-br", caps.get(0).idioma());  // pt-br vence en
+    }
+
+    @Test
+    void uc4_capitulosSemPtBrAparecemNoOriginalEOrdenadosPorNumero() {
+        final String feedPt = """
+                { "data": [ { "id": "c1pt", "attributes": {
+                    "chapter": "1", "title": "", "translatedLanguage": "pt-br", "pages": 10 } } ] }""";
+        final String feedJa = """
+                { "data": [ { "id": "c2ja", "attributes": {
+                    "chapter": "2", "title": "", "translatedLanguage": "ja", "pages": 10 } } ] }""";
+        final CatalogoService service = new CatalogoService(u -> {
+            if (u.contains("translatedLanguage[]=pt-br")) {
+                return json(feedPt);
+            }
+            if (u.contains("translatedLanguage[]=ja")) {
+                return json(feedJa);
+            }
+            return json("{ \"data\": [] }");          // sem inglês
+        }, new CacheStub());
+
+        final var caps = service.listarCapitulos("m1", "ja");
+
+        assertEquals(2, caps.size());
+        assertEquals("1", caps.get(0).numero());      // ordenado por número
+        assertEquals("pt-br", caps.get(0).idioma());
+        assertEquals("2", caps.get(1).numero());
+        assertEquals("ja", caps.get(1).idioma());     // continuação só no original
     }
 }

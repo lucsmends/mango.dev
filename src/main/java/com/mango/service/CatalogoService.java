@@ -19,6 +19,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -128,13 +129,53 @@ public class CatalogoService {
     // Capítulos da ficha (RN1.6)
     // ------------------------------------------------------------------
 
-    /** Capítulos em pt-br; sem nenhum, cai para en (RN1.6). */
-    public List<Capitulo> listarCapitulos(final String mangaId) {
-        List<Capitulo> caps = feed(mangaId, Config.IDIOMA_PREFERIDO);
-        if (caps.isEmpty()) {
-            caps = feed(mangaId, Config.IDIOMA_FALLBACK);
+    /**
+     * Capítulos em pt-br, inglês e no idioma original (ja/ko), unificados.
+     *
+     * <p>RN1.6 (revisada para o UC4): cada número de capítulo aparece uma única
+     * vez, na melhor versão disponível na ordem <b>pt-br &gt; inglês &gt;
+     * original</b>. Os capítulos que só existem no idioma original ficam
+     * visíveis justamente para serem traduzidos pelo UC4 (permite ler a
+     * continuação quando a tradução parou). A lista é ordenada pelo número.</p>
+     *
+     * @param idiomaOriginal idioma de origem do mangá (ex.: {@code "ja"},
+     *                       {@code "ko"}); pode ser vazio ou nulo.
+     */
+    public List<Capitulo> listarCapitulos(final String mangaId, final String idiomaOriginal) {
+        final List<String> idiomas = new ArrayList<>(List.of(
+                Config.IDIOMA_PREFERIDO, Config.IDIOMA_FALLBACK));   // pt-br, en
+        if (idiomaOriginal != null && !idiomaOriginal.isBlank()
+                && !idiomas.contains(idiomaOriginal)) {
+            idiomas.add(idiomaOriginal);                              // ja/ko
         }
+
+        // Percorrendo os idiomas em ordem de preferência, a 1ª versão vista de
+        // cada número de capítulo vence: pt-br > en > original.
+        final Map<String, Capitulo> melhorPorNumero = new LinkedHashMap<>();
+        for (final String idioma : idiomas) {
+            for (final Capitulo cap : feed(mangaId, idioma)) {
+                final String chave = cap.numero() == null || cap.numero().isBlank()
+                        ? "id:" + cap.id()          // oneshots: não unifica por número
+                        : "n:" + cap.numero();
+                melhorPorNumero.putIfAbsent(chave, cap);
+            }
+        }
+
+        final List<Capitulo> caps = new ArrayList<>(melhorPorNumero.values());
+        caps.sort((a, b) -> Double.compare(numeroOrdenavel(a.numero()), numeroOrdenavel(b.numero())));
         return caps;
+    }
+
+    /** Número do capítulo como {@code double} para ordenar; vazios/inválidos vão ao fim. */
+    private static double numeroOrdenavel(final String numero) {
+        if (numero == null || numero.isBlank()) {
+            return Double.MAX_VALUE;
+        }
+        try {
+            return Double.parseDouble(numero.trim());
+        } catch (final NumberFormatException e) {
+            return Double.MAX_VALUE;
+        }
     }
 
     private List<Capitulo> feed(final String mangaId, final String idioma) {

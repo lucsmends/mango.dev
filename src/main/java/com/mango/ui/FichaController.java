@@ -177,7 +177,7 @@ public class FichaController {
         final Task<List<Capitulo>> task = new Task<>() {
             @Override
             protected List<Capitulo> call() {
-                return service.listarCapitulos(manga.id());
+                return service.listarCapitulos(manga.id(), manga.idiomaOriginal());
             }
         };
         task.setOnSucceeded(e -> {
@@ -185,8 +185,8 @@ public class FichaController {
             final List<Capitulo> caps = task.getValue();
             listaCapitulos.getItems().setAll(caps);
             lblStatusCapitulos.setText(caps.isEmpty()
-                    ? "Nenhum capítulo disponível em pt-br ou en."
-                    : caps.size() + " capítulos · duplo clique para ler");
+                    ? "Nenhum capítulo disponível (pt-br, inglês ou original)."
+                    : caps.size() + " capítulos · pt-br › inglês › original · duplo clique para ler");
         });
         task.setOnFailed(e -> {
             progresso.setVisible(false);
