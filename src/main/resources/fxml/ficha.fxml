@@ -21,8 +21,6 @@
             <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
             <Button text="← Voltar" onAction="#voltar"/>
             <Label fx:id="lblTitulo" styleClass="titulo-ficha" wrapText="true"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <MenuButton fx:id="menuBiblioteca" text="＋ Biblioteca"/>
         </HBox>
     </top>
 
@@ -32,6 +30,8 @@
 
             <VBox spacing="10" alignment="TOP_CENTER" minWidth="240">
                 <ImageView fx:id="imgCapa" fitWidth="240" fitHeight="336"/>
+                <MenuButton fx:id="menuBiblioteca" text="＋ Adicionar à lista"
+                            maxWidth="240" prefWidth="240" styleClass="btn-biblioteca"/>
                 <Label fx:id="lblMeta" styleClass="meta"/>
                 <Label fx:id="lblGeneros" styleClass="generos" wrapText="true"
                        maxWidth="240" textAlignment="CENTER"/>

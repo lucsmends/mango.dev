@@ -170,3 +170,38 @@
     -fx-padding: 28;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 28, 0, 0, 10);
 }
+
+/* ---------- botão Adicionar à biblioteca (ficha) ---------- */
+.btn-biblioteca {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -mango-2, -mango);
+    -fx-background-radius: 12;
+    -fx-padding: 11 16;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(255,159,28,0.40), 14, 0, 0, 5);
+}
+.btn-biblioteca > .label { -fx-text-fill: #2a1c00; }
+.btn-biblioteca .arrow { -fx-background-color: #2a1c00; }
+.btn-biblioteca:hover {
+    -fx-translate-y: -1;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, derive(-mango-2,12%), derive(-mango,12%));
+    -fx-effect: dropshadow(gaussian, rgba(255,159,28,0.55), 18, 0, 0, 6);
+}
+.btn-biblioteca:showing { -fx-translate-y: 0; }
+
+/* ---------- menus suspensos (escuros, combinando) ---------- */
+.context-menu {
+    -fx-background-color: -bg2;
+    -fx-background-radius: 12;
+    -fx-border-color: -line;
+    -fx-border-radius: 12;
+    -fx-padding: 6;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 20, 0, 0, 8);
+}
+.menu-item { -fx-background-radius: 8; -fx-padding: 7 12; }
+.menu-item .label { -fx-text-fill: -txt; }
+.menu-item:focused { -fx-background-color: -bg3; }
+.menu-item:focused .label { -fx-text-fill: -mango; }
+.check-menu-item:checked > .left-container > .check { -fx-background-color: -mango; }
+.check-menu-item:checked .label { -fx-text-fill: -mango; }
