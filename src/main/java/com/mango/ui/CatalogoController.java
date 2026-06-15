@@ -107,13 +107,6 @@ public class CatalogoController {
     }
 
     @FXML
-    public void irFavoritos() {
-        listaColecoes.getItems().stream()
-                .filter(c -> "Favoritos".equalsIgnoreCase(c.nome())).findFirst()
-                .ifPresent(c -> listaColecoes.getSelectionModel().select(c));
-    }
-
-    @FXML
     public void irHistorico() {
         listaColecoes.getSelectionModel().clearSelection();
         lblSecao.setText("Histórico");

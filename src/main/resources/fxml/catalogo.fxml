@@ -49,7 +49,6 @@
             </HBox>
 
             <Button text="Catálogo" maxWidth="Infinity" onAction="#irInicio" styleClass="nav-item"/>
-            <Button text="Favoritos" maxWidth="Infinity" onAction="#irFavoritos" styleClass="nav-item"/>
             <Button text="Histórico" maxWidth="Infinity" onAction="#irHistorico" styleClass="nav-item"/>
             <Button text="Relatórios" maxWidth="Infinity" onAction="#irRelatorios" styleClass="nav-item"/>
             <HBox spacing="6" alignment="CENTER_LEFT">
