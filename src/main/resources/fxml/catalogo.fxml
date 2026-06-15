@@ -10,6 +10,9 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.shape.Ellipse?>
+<?import javafx.scene.shape.SVGPath?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.TilePane?>
@@ -20,7 +23,11 @@
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="barra">
             <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
-            <Label text="MANGO" styleClass="marca"/>
+            <Pane prefWidth="46" prefHeight="38" minWidth="46" maxWidth="46">
+                <SVGPath content="M9,22 C7,11 18,4 29,7 C39,10 42,21 37,29 C32,37 17,38 12,30 C10,27 9,25 9,22 Z" fill="#F4A024"/>
+                <Ellipse centerX="20" centerY="17" radiusX="5" radiusY="2.8" fill="#FFD66B" opacity="0.8"/>
+                <Ellipse centerX="31" centerY="9" radiusX="6.5" radiusY="3" fill="#46A04A" rotate="-35"/>
+            </Pane>
             <TextField fx:id="txtBusca" promptText="Buscar por título (mín. 2 caracteres)…"
                        onAction="#buscar" prefWidth="300"/>
             <ComboBox fx:id="cmbGenero" promptText="Gênero" prefWidth="170"/>

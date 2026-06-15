@@ -71,13 +71,13 @@ public class ProgressoRepository {
     /** Histórico completo, mais recentes primeiro (RN3.5). */
     public List<LeituraRecente> listarHistorico() {
         return consultar("SELECT " + COLUNAS
-                + " FROM progresso_leitura ORDER BY atualizado_em DESC");
+                + " FROM progresso_leitura WHERE titulo IS NOT NULL ORDER BY atualizado_em DESC");
     }
 
     /** Capítulos em andamento (não concluídos), para "Continuar lendo". */
     public List<LeituraRecente> listarEmAndamento() {
         return consultar("SELECT " + COLUNAS
-                + " FROM progresso_leitura WHERE concluido = FALSE AND total_paginas > 0"
+                + " FROM progresso_leitura WHERE concluido = FALSE AND total_paginas > 0 AND titulo IS NOT NULL"
                 + " ORDER BY atualizado_em DESC");
     }
 
