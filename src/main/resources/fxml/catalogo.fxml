@@ -4,48 +4,71 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.shape.Ellipse?>
+<?import javafx.scene.shape.SVGPath?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.mango.ui.CatalogoController" styleClass="tela">
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="barra">
             <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
-            <Label text="MANGO" styleClass="marca"/>
+            <Pane prefWidth="46" prefHeight="38" minWidth="46" maxWidth="46">
+                <SVGPath content="M9,22 C7,11 18,4 29,7 C39,10 42,21 37,29 C32,37 17,38 12,30 C10,27 9,25 9,22 Z" fill="#F4A024"/>
+                <Ellipse centerX="20" centerY="17" radiusX="5" radiusY="2.8" fill="#FFD66B" opacity="0.8"/>
+                <Ellipse centerX="31" centerY="9" radiusX="6.5" radiusY="3" fill="#46A04A" rotate="-35"/>
+            </Pane>
             <TextField fx:id="txtBusca" promptText="Buscar por título (mín. 2 caracteres)…"
-                       onAction="#buscar" prefWidth="320"/>
-            <ComboBox fx:id="cmbGenero" promptText="Gênero" prefWidth="180"/>
+                       onAction="#buscar" prefWidth="300"/>
+            <ComboBox fx:id="cmbGenero" promptText="Gênero" prefWidth="170"/>
             <Button fx:id="btnBuscar" text="Buscar" onAction="#buscar" defaultButton="true"/>
             <Label fx:id="lblStatus" styleClass="status"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblPagina" styleClass="status"/>
+            <Button fx:id="btnAnterior" text="‹" onAction="#paginaAnterior"/>
+            <Button fx:id="btnProxima" text="›" onAction="#proximaPagina"/>
         </HBox>
     </top>
 
-    <center>
-        <StackPane>
-            <ScrollPane fitToWidth="true" styleClass="rolagem">
-                <TilePane fx:id="grade" hgap="18" vgap="22" prefColumns="5">
-                    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-                </TilePane>
-            </ScrollPane>
-            <ProgressIndicator fx:id="progresso" visible="false"
-                               maxWidth="64" maxHeight="64"/>
-        </StackPane>
-    </center>
+    <left>
+        <VBox spacing="6" prefWidth="220" minWidth="200" styleClass="lateral">
+            <padding><Insets top="14" right="10" bottom="14" left="10"/></padding>
+            <Button text="Início" maxWidth="200" onAction="#irInicio" styleClass="nav-item"/>
+            <Button text="Favoritos" maxWidth="200" onAction="#irFavoritos" styleClass="nav-item"/>
+            <Button text="Histórico" maxWidth="200" onAction="#irHistorico" styleClass="nav-item"/>
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <Label text="MINHAS LISTAS" styleClass="nav-secao"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="+" onAction="#novaLista"/>
+            </HBox>
+            <ListView fx:id="listaColecoes" VBox.vgrow="ALWAYS"/>
+            <Button fx:id="btnRemover" text="Remover lista" maxWidth="200" onAction="#removerLista"/>
+        </VBox>
+    </left>
 
-    <bottom>
-        <HBox spacing="14" alignment="CENTER" styleClass="barra">
-            <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
-            <Button fx:id="btnAnterior" text="← Anterior" onAction="#paginaAnterior" disable="true"/>
-            <Label fx:id="lblPagina"/>
-            <Button fx:id="btnProxima" text="Próxima →" onAction="#proximaPagina" disable="true"/>
-        </HBox>
-    </bottom>
+    <center>
+        <VBox spacing="8">
+            <padding><Insets top="12" right="6" bottom="6" left="12"/></padding>
+            <Label fx:id="lblSecao" styleClass="titulo-ficha"/>
+            <StackPane VBox.vgrow="ALWAYS">
+                <ScrollPane fitToWidth="true" styleClass="rolagem">
+                    <TilePane fx:id="grade" hgap="18" vgap="22" prefColumns="5">
+                        <padding><Insets top="8" right="20" bottom="20" left="8"/></padding>
+                    </TilePane>
+                </ScrollPane>
+                <ProgressIndicator fx:id="progresso" visible="false" maxWidth="64" maxHeight="64"/>
+                <Label fx:id="lblVazio" styleClass="status"/>
+            </StackPane>
+        </VBox>
+    </center>
 </BorderPane>

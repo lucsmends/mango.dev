@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.mango.config.Config;
 import com.mango.db.ProgressoRepository;
 import com.mango.exception.ApiException;
+import com.mango.model.Capitulo;
+import com.mango.model.Manga;
 import com.mango.model.Pagina;
 import com.mango.model.Progresso;
 import com.mango.net.JsonFetcher;
@@ -56,10 +58,11 @@ public class LeitorService {
      * RN2.2 — persiste a cada mudança de página; RN2.3 — concluído quando a
      * última página é atingida. {@code paginaAtual} é zero-based.
      */
-    public void salvarProgresso(final String mangaId, final String capituloId,
+    public void salvarProgresso(final Manga manga, final Capitulo capitulo,
                                 final int paginaAtual, final int totalPaginas) {
         final boolean concluido = totalPaginas > 0 && paginaAtual >= totalPaginas - 1;
-        progresso.salvar(mangaId, capituloId, paginaAtual, totalPaginas, concluido);
+        progresso.salvar(manga.id(), capitulo.id(), manga.titulo(), manga.capaUrl(),
+                capitulo.numero(), paginaAtual, totalPaginas, concluido);
     }
 
     /** FA5 — progresso salvo para retomar a leitura. */
