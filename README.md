@@ -34,7 +34,7 @@
 
 O **Mango** é um leitor de mangás desktop desenvolvido como trabalho da disciplina de **Implementação de Software** (UNISINOS — 2026/1). O sistema consome o catálogo público do [MangaDex](https://api.mangadex.org) e oferece uma experiência de leitura confortável com biblioteca pessoal persistente.
 
-O grande diferencial é um pipeline experimental de **tradução automática com overlay**: o sistema detecta balões de texto na página, executa OCR (Tesseract via [Tess4J](http://tess4j.sourceforge.net)), envia o texto a uma API de tradução e renderiza o resultado por cima da imagem original. A funcionalidade é inspirada no [FrankYomik](https://github.com/akitaonrails/FrankYomik) de Fabio Akita.
+O grande diferencial planejado é um pipeline de **tradução automática com overlay** (UC4, **trabalho futuro**): detectar os balões de texto na página, reconhecer o texto japonês, traduzir e renderizar o resultado por cima da imagem original. A arquitetura de referência é o [FrankYomik](https://github.com/akitaonrails/FrankYomik), de Fabio Akita — no qual o cliente leitor consome um **serviço externo** de tradução de mangá (detecção de balão + OCR especializado + tradução por LLM + *inpainting*) via HTTP. Ver [Trabalho futuro](#trabalho-futuro).
 
 > **Aviso acadêmico:** o Mango é um projeto educacional, sem fins comerciais, que apenas consome a API pública do MangaDex. O sistema **não distribui conteúdo protegido por direitos autorais**. Todo conteúdo exibido vem em tempo real dos servidores do MangaDex.
 
@@ -66,9 +66,11 @@ O detalhamento de cada UC, com fluxo principal, fluxos alternativos, exceções 
 | Acesso a dados         | JDBC + camada Repository            | Baixo acoplamento, didático                                              |
 | Cliente HTTP           | `java.net.http.HttpClient`          | Nativo do JDK, sem dependência externa                                   |
 | Serialização JSON      | Jackson Databind                    | Integra-se nativamente com records                                       |
-| OCR (UC4)              | Tess4J 5 (Tesseract)                | Suporta japonês (`jpn`) e coreano (`kor`)                                |
-| Tradução (UC4)         | A definir (DeepL / Google / LLM)    | Decisão de stack na Sprint 4                                             |
-| Imagem (UC4)           | `java.awt.image.BufferedImage`      | Suficiente para overlay sem dependências extras                          |
+| Detecção de balão (UC4)| RT-DETR-v2 (no serviço externo)     | Modelo treinado p/ balões — OCR genérico não recorta o texto do mangá    |
+| OCR (UC4)              | manga-ocr (jpn) / EasyOCR (kor)     | OCR **especializado em mangá**; Tesseract genérico falha em fonte/balão  |
+| Tradução (UC4)         | LLM (Ollama) ou API (DeepL/Google)  | LLM local dá contexto melhor; API evita GPU — decisão do backend         |
+| Integração no cliente  | `HttpClient` → serviço FrankYomik   | O Mango é **cliente HTTP**; o trabalho pesado de ML fica no serviço       |
+| Overlay (UC4)          | JavaFX `Pane` sobre a `ImageView`   | Reescala as *bounding boxes* do serviço sobre a página exibida           |
 | Testes                 | JUnit 5 + Mockito                   | Padrão da indústria para Java                                            |
 | Logging                | SLF4J + Logback                     | Logging estruturado, configurável                                        |
 | Controle de versão     | Git + GitHub                        | Pull Requests, branches, futura CI                                       |
@@ -101,7 +103,7 @@ O Mango segue o padrão **MVC com Service Layer**, com clara separação de resp
 
 - **View** (`ui/*.fxml` + `css/`) — telas em FXML estilizadas com CSS.
 - **Controller** (`ui/`) — manipula eventos da UI e delega ao Service. Não contém regra de negócio. Ex.: `CatalogoController`, `FichaController`, `LeitorController`.
-- **Service** (`service/`) — concentra Regras de Negócio: `CatalogoService` (UC1), `LeitorService` (UC2), `BibliotecaService` e `HistoricoService` (UC3). O `TraducaoService` do UC4 é trabalho futuro.
+- **Service** (`service/`) — concentra Regras de Negócio: `CatalogoService` (UC1), `LeitorService` (UC2), `BibliotecaService` e `HistoricoService` (UC3). O `TraducaoService` do UC4 (trabalho futuro) seria um **cliente HTTP de um serviço de tradução externo** (modelo FrankYomik), sem embarcar modelos de ML no aplicativo.
 - **Repository** (`db/`) — abstrai o acesso ao banco H2 e ao cache: `CacheBuscaRepository`, `ProgressoRepository`, `BibliotecaRepository`, `ColecaoRepository`.
 - **Net** (`net/`) — cliente HTTP do MangaDex (`MangaDexHttp` / `JsonFetcher`) com retry e tratamento de rate limit.
 - **Model** (`model/`) — `records` imutáveis: `Manga`, `Capitulo`, `Pagina`, `Progresso`, `LeituraRecente`, `ItemBiblioteca`, `Colecao`, `Genero`, `FiltroBusca`, `ResultadoBusca`.
@@ -152,11 +154,9 @@ Antes de configurar o ambiente, certifique-se de ter instalado:
 - **JDK 21** ([Eclipse Temurin](https://adoptium.net/temurin/releases/?version=21) recomendado).
 - **Apache Maven 3.9+** ([download](https://maven.apache.org/download.cgi)).
 - **Git** ([download](https://git-scm.com/downloads)).
-- **Tesseract OCR 5.x** *(apenas para UC4, opcional para os UCs 1–3)*:
-  - Linux: `sudo apt install tesseract-ocr tesseract-ocr-jpn tesseract-ocr-kor`
-  - macOS: `brew install tesseract tesseract-lang`
-  - Windows: [instalador UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki)
 - **IDE recomendada:** IntelliJ IDEA Community ou VS Code com extensão Java Pack.
+
+> **UC4 (trabalho futuro)** não exige nada instalado no cliente: a detecção de balão, o OCR e a tradução rodariam num **serviço externo** (backend estilo [FrankYomik](https://github.com/akitaonrails/FrankYomik), com GPU). O Mango só precisaria da **URL desse serviço**. Por isso os UCs 1–3 (entregues) não têm nenhuma dependência nativa.
 
 Verifique a instalação:
 
@@ -164,7 +164,6 @@ Verifique a instalação:
 java --version    # deve indicar 21
 mvn --version     # deve indicar 3.9+
 git --version
-tesseract --version  # opcional, apenas para UC4
 ```
 
 ---
@@ -176,15 +175,12 @@ tesseract --version  # opcional, apenas para UC4
 git clone https://github.com/<organizacao>/mango.git
 cd mango
 
-# 2. (Opcional) Configure a chave da API de tradução para o UC4
-cp .env.example .env
-# edite .env e adicione: TRANSLATION_API_KEY=seu_token_aqui
-
-# 3. Baixe as dependências
+# 2. Baixe as dependências
 mvn dependency:resolve
 
-# 4. (Opcional) Configure o caminho do Tesseract caso não esteja no PATH
-# Adicione a variável em .env: TESSDATA_PREFIX=/caminho/para/tessdata
+# 3. (Trabalho futuro — UC4) apontar a URL do serviço de tradução externo:
+# cp .env.example .env
+# edite .env e adicione: MANGO_TRADUCAO_URL=http://<host-do-servico-frankyomik>
 ```
 
 ---
@@ -312,14 +308,27 @@ chore: atualiza versão do Jackson para 2.17
 
 ### UC4 — Tradução automática com overlay (não implementado)
 
-O diferencial originalmente planejado do Mango — detectar balões de texto, rodar OCR, traduzir e renderizar o resultado por cima da página, no estilo *overlay* — **foi especificado mas não entregue nesta versão**. Fica registrado como evolução futura. O pipeline previsto:
+O diferencial originalmente planejado do Mango — detectar balões, reconhecer o texto, traduzir e renderizar o resultado por cima da página, em *overlay* — **foi especificado mas não entregue nesta versão**, e fica registrado como evolução futura. A arquitetura de referência é o [FrankYomik](https://github.com/akitaonrails/FrankYomik), de Fabio Akita.
 
-1. Captura da página renderizada em `java.awt.image.BufferedImage`.
-2. OCR via **Tess4J** (Tesseract) para extrair o texto e as *bounding boxes* dos balões (`jpn` / `kor`).
-3. Tradução do texto por API externa (DeepL / Google / LLM — decisão de stack pendente).
-4. *Overlay* do texto traduzido sobre a imagem original, preservando o layout do balão.
+#### Arquitetura proposta (modelo cliente ↔ serviço)
 
-A ideia é inspirada no [FrankYomik](https://github.com/akitaonrails/FrankYomik), de Fabio Akita.
+O trabalho pesado de visão computacional e tradução fica num **serviço externo** (com GPU); o Mango atua apenas como **cliente HTTP** que envia a imagem e desenha o resultado. Pipeline do serviço, espelhando o FrankYomik:
+
+1. **Detecção de balões** com **RT-DETR-v2** (modelo treinado para quadrinhos), devolvendo as *bounding boxes*.
+2. **OCR especializado**: **manga-ocr** para japonês (mangá) e **EasyOCR** para coreano (webtoon).
+3. **Tradução** por **LLM local** (Ollama, ex.: `qwen3:14b`) ou API (DeepL/Google).
+4. **Limpeza opcional** do texto original com *inpainting* (**LaMa**) antes de sobrepor.
+5. O Mango recebe `(caixa, texto_traduzido)` e desenha um **overlay** em JavaFX (`Pane` sobre a `ImageView`), reescalando as caixas para o tamanho exibido.
+
+#### Lições do protótipo (por que não foi entregue)
+
+Um *spike* descartado tentou resolver tudo no cliente com **OCR genérico (OCR.space) + tradução free (MyMemory)** e mostrou, na prática, por que o UC4 é de alto risco (alinhado ao risco **R1** do Plano):
+
+- **OCR genérico não serve para mangá**: fonte estilizada, texto vertical, onomatopeias e balões irregulares produzem reconhecimento incoerente. É preciso um OCR treinado em mangá (**manga-ocr**) e detecção dedicada de balão (**RT-DETR-v2**).
+- **Premissa de idioma**: o leitor já carrega a versão **localizada** do capítulo (RN1.6: pt-br › en › original). O UC4 só faz sentido sobre o **capítulo original em japonês** — exigindo uma busca específica pelas páginas *raw*.
+- **Custo de infraestrutura**: a qualidade do FrankYomik depende de **GPU** (o LLM de tradução pede ~9 GB de VRAM), inviável de embarcar no aplicativo desktop e fora do escopo de tempo da disciplina.
+
+Por isso o UC4 permanece como trabalho futuro: a abordagem correta exige um serviço de ML dedicado, não um atalho no cliente.
 
 ### Outras evoluções mapeadas
 

@@ -55,7 +55,7 @@ Todo commit deve seguir o padrão:
 ```
 feat(uc1): adiciona filtro de gênero no catálogo
 fix(uc2): corrige memory leak na pré-carga de páginas
-docs: atualiza README com instruções de Tesseract
+docs: documenta arquitetura do UC4 baseada no FrankYomik
 test(service): adiciona testes para MangaDexService
 refactor(repository): extrai BaseRepository
 chore: bumpa versão do Jackson para 2.17
