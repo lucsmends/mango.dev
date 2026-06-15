@@ -3,15 +3,15 @@
    ============================================================== */
 
 .root {
-    -mango:   #ff9f1c;
-    -mango-2: #ffb703;
-    -bg0: #0f1014;
-    -bg1: #16171d;
-    -bg2: #1d1f27;
-    -bg3: #262932;
-    -txt: #eceef4;
-    -txt-dim: #9aa0ad;
-    -line: #2a2d38;
+    -mango:   #ff8c1a;
+    -mango-2: #ffa733;
+    -bg0: #0c0c0d;
+    -bg1: #141415;
+    -bg2: #1c1c1e;
+    -bg3: #272729;
+    -txt: #ededf0;
+    -txt-dim: #9a9aa0;
+    -line: #303033;
     -fx-font-family: "Segoe UI", "Inter", "Helvetica Neue", sans-serif;
 }
 
@@ -39,11 +39,11 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 6, 0, 0, 2);
 }
 .button:hover {
-    -fx-background-color: #313542;
+    -fx-background-color: #2f2f33;
     -fx-translate-y: -1;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 12, 0, 0, 4);
 }
-.button:pressed { -fx-translate-y: 0; -fx-background-color: #3a3e4c; }
+.button:pressed { -fx-translate-y: 0; -fx-background-color: #3a3a40; }
 
 .button:default {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, -mango-2, -mango);
@@ -119,8 +119,8 @@
 .scroll-pane > .viewport { -fx-background-color: transparent; }
 .scroll-bar { -fx-background-color: transparent; }
 .scroll-bar .track { -fx-background-color: transparent; }
-.scroll-bar .thumb { -fx-background-color: #3a3e4c; -fx-background-radius: 8; }
-.scroll-bar .thumb:hover { -fx-background-color: #4a4f60; }
+.scroll-bar .thumb { -fx-background-color: #3a3a40; -fx-background-radius: 8; }
+.scroll-bar .thumb:hover { -fx-background-color: #4a4a52; }
 .scroll-bar .increment-button, .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-padding: 0; }
 .scroll-bar .increment-arrow, .scroll-bar .decrement-arrow { -fx-background-color: transparent; -fx-padding: 0; }
 
