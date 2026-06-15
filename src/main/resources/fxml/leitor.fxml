@@ -6,7 +6,6 @@
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -22,6 +21,7 @@
             <Button text="← Voltar" onAction="#voltar"/>
             <Label fx:id="lblTitulo" styleClass="titulo-leitor"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnModo" text="Modo: Página" onAction="#alternarModo"/>
             <Label fx:id="lblAviso" styleClass="aviso"/>
             <Label fx:id="lblPagina" styleClass="status"/>
             <TextField fx:id="txtIrPara" promptText="Ir para…" prefWidth="80"
@@ -34,11 +34,10 @@
 
     <center>
         <StackPane>
-            <ScrollPane fitToWidth="true" fitToHeight="true" pannable="true"
+            <ScrollPane fx:id="rolagem" fitToWidth="true" pannable="true"
                         styleClass="rolagem-leitor">
-                <StackPane fx:id="painel" styleClass="painel-leitor">
-                    <ImageView fx:id="imgPagina" preserveRatio="true"/>
-                </StackPane>
+                <VBox fx:id="conteudo" alignment="TOP_CENTER" spacing="2"
+                      styleClass="painel-leitor"/>
             </ScrollPane>
 
             <VBox fx:id="painelErro" visible="false" spacing="14"

@@ -8,20 +8,22 @@ import com.mango.service.LeitorService;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,12 +31,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Leitor de capítulos (UC2) — modo página única, com a página centralizada.
+ * Leitor de capítulos (UC2), com dois modos de leitura (RN2.5):
  *
- * <p>Cobre: navegação por teclado/mouse/botões, zoom 25%–400% (RN2.6, FA3),
- * pré-carga de 2 páginas (RN2.1), persistência de progresso a cada página
- * (RN2.2) com conclusão na última (RN2.3), retomada (FA5), salto direto
- * (FA4) e placeholder com "Tentar novamente" em falha de página (EX1).</p>
+ * <ul>
+ *   <li><b>Página única</b> — uma página centralizada por vez (padrão para mangá);</li>
+ *   <li><b>Rolagem</b> — todas as páginas empilhadas em rolagem vertical contínua,
+ *       ideal para manhwa/webtoon (padrão para mangás de origem coreana).</li>
+ * </ul>
+ *
+ * <p>Cobre ainda: navegação por teclado/mouse/botões, zoom 25%–400% (RN2.6, FA3),
+ * pré-carga (RN2.1), persistência de progresso (RN2.2/RN2.3), retomada (FA5),
+ * salto direto (FA4) e placeholder em falha de página (EX1).</p>
  */
 public class LeitorController {
 
@@ -43,22 +50,27 @@ public class LeitorController {
     private static final double ZOOM_PASSO = 0.25;
     private static final double LARGURA_BASE = 800;
 
+    private enum Modo { PAGINA, ROLAGEM }
+
     @FXML private BorderPane raiz;
     @FXML private Label lblTitulo;
     @FXML private Label lblPagina;
     @FXML private Label lblZoom;
     @FXML private Label lblAviso;
     @FXML private TextField txtIrPara;
-    @FXML private StackPane painel;
-    @FXML private ImageView imgPagina;
+    @FXML private ScrollPane rolagem;
+    @FXML private VBox conteudo;
     @FXML private VBox painelErro;
     @FXML private Label lblErro;
     @FXML private ProgressIndicator progresso;
     @FXML private Button btnAnterior;
     @FXML private Button btnProxima;
+    @FXML private Button btnModo;
 
     private final LeitorService service = new LeitorService();
     private final Map<Integer, Image> cache = new ConcurrentHashMap<>();
+    private final ImageView imgPagina = new ImageView();
+    private final List<ImageView> tiras = new ArrayList<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2, r -> {
         final Thread t = new Thread(r, "leitor-precarga");
         t.setDaemon(true);
@@ -70,22 +82,27 @@ public class LeitorController {
     private List<Pagina> paginas = List.of();
     private int indice;
     private double zoom = 1.0;
+    private Modo modo = Modo.PAGINA;
+    private boolean ajustandoScroll;
 
     @FXML
     public void initialize() {
+        imgPagina.setPreserveRatio(true);
         raiz.addEventFilter(KeyEvent.KEY_PRESSED, this::aoTeclar);
         raiz.addEventFilter(ScrollEvent.SCROLL, e -> {
-            if (e.isControlDown()) {                       // FA3: Ctrl + scroll
+            if (e.isControlDown()) {                       // FA3: Ctrl + scroll = zoom
                 ajustarZoom(e.getDeltaY() > 0 ? ZOOM_PASSO : -ZOOM_PASSO);
                 e.consume();
             }
         });
+        rolagem.vvalueProperty().addListener((o, a, b) -> aoRolar(b.doubleValue()));
     }
 
-    /** Ponto de entrada: carrega as páginas e abre na posição salva (FA5). */
+    /** Ponto de entrada: define o modo por origem (RN2.5), carrega páginas e retoma (FA5). */
     public void abrir(final Manga manga, final Capitulo capitulo) {
         this.manga = manga;
         this.capitulo = capitulo;
+        this.modo = manga.coreano() ? Modo.ROLAGEM : Modo.PAGINA;   // RN2.5
         lblTitulo.setText(manga.titulo() + " — Cap. "
                 + (capitulo.numero().isBlank() ? "—" : capitulo.numero()));
 
@@ -98,8 +115,12 @@ public class LeitorController {
         task.setOnSucceeded(e -> {
             paginas = task.getValue();
             progresso.setVisible(false);
-            irParaPagina(paginaInicial());
-            Platform.runLater(raiz::requestFocus);
+            aplicarModo();
+            final int inicial = paginaInicial();
+            Platform.runLater(() -> {
+                irParaPagina(inicial);
+                raiz.requestFocus();
+            });
         });
         task.setOnFailed(e -> {                            // EX2 e falhas de API
             progresso.setVisible(false);
@@ -122,6 +143,70 @@ public class LeitorController {
                     return p.paginaAtual();
                 })
                 .orElse(0);
+    }
+
+    // ------------------------------------------------------------------
+    // Modos de leitura
+    // ------------------------------------------------------------------
+
+    @FXML
+    public void alternarModo() {
+        modo = modo == Modo.PAGINA ? Modo.ROLAGEM : Modo.PAGINA;
+        aplicarModo();
+        irParaPagina(indice);
+        raiz.requestFocus();
+    }
+
+    /** Monta o conteúdo central conforme o modo atual. */
+    private void aplicarModo() {
+        if (paginas.isEmpty()) {
+            return;
+        }
+        if (modo == Modo.PAGINA) {
+            btnModo.setText("Modo: Página");
+            rolagem.setFitToHeight(true);
+            conteudo.setAlignment(Pos.CENTER);
+            conteudo.getChildren().setAll(imgPagina);
+            tiras.clear();
+        } else {
+            btnModo.setText("Modo: Rolagem");
+            rolagem.setFitToHeight(false);
+            conteudo.setAlignment(Pos.TOP_CENTER);
+            montarTira();
+        }
+        aplicarZoom();
+    }
+
+    /** Empilha todas as páginas para a leitura em rolagem (manhwa). */
+    private void montarTira() {
+        tiras.clear();
+        conteudo.getChildren().clear();
+        for (int i = 0; i < paginas.size(); i++) {
+            final ImageView iv = new ImageView(cache.computeIfAbsent(i, this::baixar));
+            iv.setPreserveRatio(true);
+            iv.setFitWidth(LARGURA_BASE * zoom);
+            tiras.add(iv);
+            conteudo.getChildren().add(iv);
+        }
+    }
+
+    /** Em rolagem, mapeia a posição do scroll para a página atual (FA2). */
+    private void aoRolar(final double vvalue) {
+        if (modo != Modo.ROLAGEM || ajustandoScroll || paginas.size() <= 1) {
+            return;
+        }
+        final int novo = (int) Math.round(vvalue * (paginas.size() - 1));
+        if (novo != indice) {
+            indice = novo;
+            atualizarStatus();
+            salvarProgresso();
+        }
+    }
+
+    private void scrollParaPagina(final int i) {
+        ajustandoScroll = true;
+        rolagem.setVvalue(paginas.size() <= 1 ? 0 : (double) i / (paginas.size() - 1));
+        ajustandoScroll = false;
     }
 
     // ------------------------------------------------------------------
@@ -183,21 +268,29 @@ public class LeitorController {
             return;
         }
         indice = novoIndice;
-        exibirPagina();
-        precarregar();                                     // RN2.1
+        if (modo == Modo.PAGINA) {
+            exibirPagina();
+            precarregar();                                 // RN2.1
+        } else {
+            scrollParaPagina(novoIndice);
+            atualizarStatus();
+        }
         salvarProgresso();                                 // RN2.2 / RN2.3
     }
 
-    // ------------------------------------------------------------------
-    // Exibição, pré-carga e erro de página
-    // ------------------------------------------------------------------
-
-    private void exibirPagina() {
-        final Image imagem = cache.computeIfAbsent(indice, this::baixar);
-        mostrarImagem(imagem);
+    private void atualizarStatus() {
         lblPagina.setText("Página " + (indice + 1) + " / " + paginas.size());
         btnAnterior.setDisable(indice == 0);
         btnProxima.setDisable(indice == paginas.size() - 1);
+    }
+
+    // ------------------------------------------------------------------
+    // Exibição (página única), pré-carga e erro de página
+    // ------------------------------------------------------------------
+
+    private void exibirPagina() {
+        mostrarImagem(cache.computeIfAbsent(indice, this::baixar));
+        atualizarStatus();
     }
 
     private void mostrarImagem(final Image imagem) {
@@ -238,7 +331,11 @@ public class LeitorController {
     @FXML
     public void tentarNovamente() {                        // EX1
         cache.remove(indice);
-        exibirPagina();
+        if (modo == Modo.PAGINA) {
+            exibirPagina();
+        } else {
+            aplicarModo();
+        }
     }
 
     /** RN2.1 — mantém as próximas 2 páginas pré-carregadas em background. */
@@ -275,8 +372,10 @@ public class LeitorController {
     }
 
     private void aplicarZoom() {
-        imgPagina.setPreserveRatio(true);
         imgPagina.setFitWidth(LARGURA_BASE * zoom);
+        for (final ImageView iv : tiras) {
+            iv.setFitWidth(LARGURA_BASE * zoom);
+        }
         lblZoom.setText(Math.round(zoom * 100) + "%");
     }
 
