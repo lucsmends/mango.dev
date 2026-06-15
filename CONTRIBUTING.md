@@ -55,7 +55,7 @@ Todo commit deve seguir o padrão:
 ```
 feat(uc1): adiciona filtro de gênero no catálogo
 fix(uc2): corrige memory leak na pré-carga de páginas
-docs: atualiza README com instruções de Tesseract
+docs: documenta arquitetura do UC4 baseada no FrankYomik
 test(service): adiciona testes para MangaDexService
 refactor(repository): extrai BaseRepository
 chore: bumpa versão do Jackson para 2.17
@@ -73,16 +73,20 @@ chore: bumpa versão do Jackson para 2.17
 
 ## 3. Fluxo de Pull Requests Cruzados
 
-A regra principal do nosso processo é: **nenhum código entra na `develop` sem ser revisado pelo par oposto**. Isso garante que todos os membros conheçam o sistema inteiro e evita silos de conhecimento.
+A regra principal do nosso processo é: **nenhum código entra na `develop` sem ser revisado por pelo menos um membro do time que não é o autor**. Isso garante que todos os membros conheçam o sistema inteiro e evita silos de conhecimento.
 
-### Quem revisa o quê
+### Modelo de revisão para uma equipe de 3 (Max, Lucas, Lorenzo)
 
-| PR aberto por… | Revisado e aprovado por… |
-|----------------|---------------------------|
-| Par A          | Pelo menos 1 membro do **Par B** |
-| Par B          | Pelo menos 1 membro do **Par A** |
+A cada sprint, dois desenvolvedores formam o **par da semana** (trabalhando juntos na fatia vertical principal do UC) e o terceiro fica como **solo da semana** (responsável pela fatia complementar e pela revisão atravessada).
 
-> **Exceção:** PRs apenas de documentação ou `.gitignore`/configs podem ser aprovados por qualquer membro do par oposto (não exigem revisão profunda).
+| Quem abriu o PR              | Quem revisa                                             |
+|------------------------------|---------------------------------------------------------|
+| Qualquer membro do par       | O **solo** da sprint (revisor cruzado natural)          |
+| O solo                       | Um dos dois membros do par                              |
+
+A cada sprint a composição muda — em 3 sprints todas as combinações ocorrem ao menos uma vez. O `Plano de Projeto.docx` §4 detalha a rotação.
+
+> **Exceção:** PRs apenas de documentação ou `.gitignore`/configs podem ser aprovados por qualquer outro membro do time (não exigem revisão profunda).
 
 ### Checklist do autor (antes de abrir o PR)
 
@@ -93,7 +97,7 @@ A regra principal do nosso processo é: **nenhum código entra na `develop` sem 
 - [ ] Caso de teste correspondente foi executado manualmente.
 - [ ] Título do PR segue Conventional Commits.
 - [ ] Descrição do PR contém o **link do card do Trello** e o **escopo** da mudança.
-- [ ] Marcou o membro do par oposto como **reviewer**.
+- [ ] Marcou o reviewer adequado conforme a rotação da sprint.
 
 ### Template de descrição do PR
 

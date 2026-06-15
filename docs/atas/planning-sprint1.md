@@ -3,22 +3,21 @@
 | Campo | Valor |
 |-------|-------|
 | **Sprint** | Sprint 1 — Planejamento e Estruturação |
+| **Disciplina** | Implementação de Software — Unisinos — 2026/1 |
 | **Data** | 05/05/2026 |
 | **Horário** | 19:00 – 19:45 |
 | **Duração** | 45 minutos |
-| **Local** | [Discord / Sala 401] |
-| **Facilitador** | Scrum Master |
-| **Secretário** | Max Ho Soares |
+| **Local** | [Discord / Sala de aula Unisinos] |
+| **Facilitador** | Lorenzo Oliveira (Scrum Master) |
+| **Secretário** | Max Soares |
 
 ## Participantes
 
-| Papel | Nome | Presença |
-|-------|------|----------|
-| Product Owner | Max Ho Soares | ✅ |
-| Scrum Master | [a definir] | ⬜ |
-| Dev — Par A | [a definir] | ⬜ |
-| Dev — Par B | [a definir] | ⬜ |
-| Dev — Par B | [a definir] | ⬜ |
+| Membro | Papel na sprint | Presença |
+|--------|-----------------|----------|
+| Max Soares | Dev · Product Owner | ✅ |
+| Lucas Mendes | Dev · Owner do repositório | ⬜ |
+| Lorenzo Oliveira | Dev · Scrum Master | ⬜ |
 
 ## Sprint Goal
 
@@ -35,19 +34,22 @@ Total de **22 itens** distribuídos em 4 critérios:
 
 A lista completa, com responsáveis e status, está em [`docs/Checklist_Sprint1.xlsx`](../Checklist_Sprint1.xlsx).
 
-## Divisão entre os pares
+## Divisão de trabalho
 
-### Par A
-- Detalhamento de Casos de Uso (UC1 e UC2).
-- Plano de Projeto.
-- README.md.
-- Casos de Teste para UC1.
+Equipe de 3 desenvolvedores: a cada sprint, dois formam o **par da semana** (fatia vertical do UC) e o terceiro fica como **solo** (fatia complementar + revisão cruzada).
 
-### Par B
-- Detalhamento de Casos de Uso (UC3 e UC4).
-- Estimativas UCP.
-- Configuração do repositório Git.
-- pom.xml + estrutura de diretórios.
+| Composição da Sprint 1 | Membros | Foco |
+|---|---|---|
+| **Par** | Max Soares + Lucas Mendes | Casos de Uso (UC1-UC4), Plano de Projeto, Estimativas, README |
+| **Solo** | Lorenzo Oliveira | Configuração do repositório Git, pom.xml, estrutura de diretórios, .gitignore, Casos de Teste UC1 |
+
+A rotação prevista para as próximas sprints:
+
+| Sprint | Par | Solo |
+|---|---|---|
+| Sprint 2 | Lucas + Lorenzo | Max |
+| Sprint 3 | Max + Lorenzo | Lucas |
+| Sprint 4 | Max + Lucas | Lorenzo |
 
 ## Acordos do time
 
@@ -64,10 +66,11 @@ A lista completa, com responsáveis e status, está em [`docs/Checklist_Sprint1.
 | Atraso na configuração do Git | Média | Configuração na primeira reunião; ajuda síncrona. |
 | Subestimação do UC4 | Alta | UC4 fica na Sprint 4; redução de escopo planejada. |
 | Conflitos de merge | Média | GitFlow + PRs cruzados + integração toda sexta. |
+| **Carga semanal alta com 3 devs (~73 h/sem)** | **Alta** | Priorizar UC1-UC3 firmes; UC4 com escopo flexível; uso intensivo de pareamento e IA para acelerar. |
 
 ## Decisões
 
-- ✅ Hospedagem do repositório: **GitHub** (`github.com/maxho/mango`).
+- ✅ Hospedagem do repositório: **GitHub** (`github.com/lucsmends/mango.dev`).
 - ✅ Linguagem dos commits: **português** (Conventional Commits).
 - ✅ Idioma do código e dos comentários: **português** para domínio, **inglês** para nomes de classes e métodos.
 - ✅ IDE recomendada: **IntelliJ IDEA Community** (alternativa: VS Code com Java Pack).
@@ -76,15 +79,14 @@ A lista completa, com responsáveis e status, está em [`docs/Checklist_Sprint1.
 
 | Ação | Responsável | Prazo |
 |------|-------------|-------|
-| Criar repositório no GitHub | Max | 05/05 |
-| Adicionar todos como colaboradores | Max | 05/05 |
-| Configurar branch protection em `main` e `develop` | Max | 06/05 |
-| Criar Trello e cards da Sprint 1 | Scrum Master | 06/05 |
+| Criar repositório no GitHub | Lucas | 05/05 |
+| Adicionar Max e Lorenzo como Collaborators | Lucas | 05/05 |
+| Configurar branch protection em `main` e `develop` | Lucas | 06/05 |
+| Criar Trello e cards da Sprint 1 | Lorenzo | 06/05 |
 | Primeira Daily | Equipe | 07/05 – 09:00 |
 
 ## Assinaturas
 
-- Max Ho Soares — _________________________
-- [Integrante 2] — _________________________
-- [Integrante 3] — _________________________
-- [Integrante 4] — _________________________
+- Max Soares — _________________________
+- Lucas Mendes — _________________________
+- Lorenzo Oliveira — _________________________

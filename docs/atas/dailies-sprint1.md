@@ -4,6 +4,8 @@
 > 1. O que fiz desde a última Daily?
 > 2. O que farei até a próxima?
 > 3. Há algum impedimento?
+>
+> **Equipe:** Max Soares · Lucas Mendes · Lorenzo Oliveira
 
 ---
 
@@ -11,10 +13,9 @@
 
 | Pessoa | O que fiz | O que farei | Impedimentos |
 |--------|-----------|-------------|--------------|
-| Max | Sprint Planning concluído; estrutura inicial dos documentos. | Criar repositório no GitHub; configurar branch protection. | — |
-| [Dev 2] | — | — | — |
-| [Dev 3] | — | — | — |
-| [Dev 4] | — | — | — |
+| Max Soares | Sprint Planning concluído; estrutura inicial dos documentos. | Iniciar Plano de Projeto e Casos de Uso UC1-UC2. | — |
+| Lucas Mendes | — | Criar repositório no GitHub e configurar branch protection. | — |
+| Lorenzo Oliveira | — | Estruturar pom.xml e diretórios MVC. | — |
 
 ---
 
@@ -22,10 +23,9 @@
 
 | Pessoa | O que fiz | O que farei | Impedimentos |
 |--------|-----------|-------------|--------------|
-| Max | | | |
-| [Dev 2] | | | |
-| [Dev 3] | | | |
-| [Dev 4] | | | |
+| Max Soares | | | |
+| Lucas Mendes | | | |
+| Lorenzo Oliveira | | | |
 
 **Observações:**
 - _Preencher após a daily._
@@ -36,10 +36,9 @@
 
 | Pessoa | O que fiz | O que farei | Impedimentos |
 |--------|-----------|-------------|--------------|
-| Max | | | |
-| [Dev 2] | | | |
-| [Dev 3] | | | |
-| [Dev 4] | | | |
+| Max Soares | | | |
+| Lucas Mendes | | | |
+| Lorenzo Oliveira | | | |
 
 **Observações:**
 - _Preencher após a daily._
@@ -50,10 +49,9 @@
 
 | Pessoa | O que fiz | O que farei | Impedimentos |
 |--------|-----------|-------------|--------------|
-| Max | | | |
-| [Dev 2] | | | |
-| [Dev 3] | | | |
-| [Dev 4] | | | |
+| Max Soares | | | |
+| Lucas Mendes | | | |
+| Lorenzo Oliveira | | | |
 
 **Observações:**
 - _Preencher após a daily._

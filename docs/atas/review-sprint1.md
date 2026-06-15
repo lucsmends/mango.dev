@@ -3,22 +3,21 @@
 | Campo | Valor |
 |-------|-------|
 | **Sprint** | Sprint 1 — Planejamento e Estruturação |
+| **Disciplina** | Implementação de Software — Unisinos — 2026/1 |
 | **Data** | 09/05/2026 |
 | **Horário** | 18:00 – 18:30 |
 | **Duração** | 30 minutos |
-| **Local** | [Sala de aula / Discord] |
+| **Local** | [Sala de aula Unisinos / Discord] |
 | **Convidados** | Professor orientador |
 
 ## Participantes
 
-| Papel | Nome | Presença |
-|-------|------|----------|
-| Product Owner | Max Ho Soares | ⬜ |
-| Scrum Master | [a definir] | ⬜ |
-| Dev — Par A | [a definir] | ⬜ |
-| Dev — Par B | [a definir] | ⬜ |
-| Dev — Par B | [a definir] | ⬜ |
-| Convidado | Professor | ⬜ |
+| Membro | Papel | Presença |
+|--------|-------|----------|
+| Max Soares | Dev · Product Owner | ⬜ |
+| Lucas Mendes | Dev · Owner do repositório | ⬜ |
+| Lorenzo Oliveira | Dev · Scrum Master | ⬜ |
+| Professor | Convidado | ⬜ |
 
 ## Sprint Goal
 
@@ -35,7 +34,7 @@
 | 3 | Roadmap MVP por sprint | Produto | `docs/Plano_de_Projeto.docx` §8 |
 | 4 | Plano de Projeto | Processo | `docs/Plano_de_Projeto.docx` |
 | 5 | Planilha de estimativas UCP | Processo | `docs/Estimativas_UCP.xlsx` |
-| 6 | Repositório no GitHub | Configuração | [URL do repo] |
+| 6 | Repositório no GitHub | Configuração | https://github.com/lucsmends/mango.dev |
 | 7 | GitFlow configurado (`main`, `develop`) | Configuração | `git branch -a` |
 | 8 | CONTRIBUTING.md com regras de PR | Configuração | `CONTRIBUTING.md` |
 | 9 | Estrutura inicial de diretórios | Configuração | `src/main/java/com/mango/...` |
